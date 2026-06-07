@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status Barber Studio — Reservas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:   #ffffff;
+  --snow:    #faf9f7;
+  --beige:   #f2ede6;
+  --beige2:  #e8e0d4;
+  --tan:     #d4c9b8;
+  --gold:    #b8965a;
+  --gold2:   #9e7c42;
+  --gold-lt: #e8d9be;
+  --ink:     #1a1714;
+  --warm:    #3d352c;
+  --muted:   #8c7d6e;
+  --border:  #e2d9cc;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'Jost', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 48px;
+  height: 64px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; letter-spacing: 0.12em;
+  color: var(--ink); text-decoration: none;
+  font-weight: 500;
+}
+
+.nav-logo em { font-style: italic; color: var(--gold); }
+
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+/* ── NOTIF ── */
+.notif {
+  position: fixed; top: 80px; right: 32px; z-index: 999;
+  background: var(--ink); color: var(--snow);
+  padding: 12px 20px;
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+  transform: translateY(-12px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  pointer-events: none;
+}
+.notif.show { transform: translateY(0); opacity: 1; }
+
+/* ── STICKY BAR ── */
+.sticky-bar {
+  display: none; position: sticky; top: 64px; z-index: 400;
+  background: var(--gold); color: var(--white);
+  padding: 10px 48px;
+  align-items: center; justify-content: space-between;
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em;
+}
+.sticky-bar.show { display: flex; }
+.sticky-bar-btn {
+  background: var(--white); color: var(--gold);
+  border: none; padding: 7px 20px;
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.2s;
+}
+.sticky-bar-btn:hover { background: var(--snow); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding-top: 64px;
+  background: var(--snow);
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-visual { display: none; }
+}
+
+.hero-content {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 80px 56px 80px 72px;
+  position: relative;
+}
+
+.hero-content::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+}
+
+.hero-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.45em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-kicker::before { content: ''; width: 28px; height: 1px; background: var(--gold); }
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(52px, 8vw, 92px);
+  line-height: 1.02;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--gold);
+  font-weight: 400;
+}
+
+.hero-sub {
+  font-family: 'Jost', sans-serif;
+  font-size: 13px; font-weight: 300;
+  letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 48px; margin-top: 10px;
+}
+
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 14px 36px;
+  background: var(--gold);
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: background 0.25s, gap 0.25s;
+  width: fit-content;
+}
+.hero-cta::after { content: '↓'; transition: transform 0.25s; }
+.hero-cta:hover { background: var(--gold2); }
+.hero-cta:hover::after { transform: translateY(3px); }
+
+/* Hero visual side */
+.hero-visual {
+  background: var(--beige);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.hero-visual-inner {
+  text-align: center; padding: 60px;
+}
+
+.hero-big-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 280px; line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--tan);
+  font-weight: 700; user-select: none;
+  letter-spacing: -0.02em;
+}
+
+.hero-visual-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.5em; text-transform: uppercase;
+  color: var(--muted); margin-top: 24px;
+}
+
+/* Subtle dot pattern on visual */
+.hero-visual::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, var(--tan) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.4;
+}
+
+/* ── INFO STRIP ── */
+.info-strip {
+  background: var(--beige2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0 72px;
+  height: 52px;
+  display: flex; align-items: center; gap: 0;
+  overflow: hidden;
+}
+
+.info-item {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--muted); padding: 0 28px; border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.info-item:first-child { padding-left: 0; }
+.info-item:last-child { border-right: none; }
+.info-item svg { width: 12px; height: 12px; stroke: var(--gold); fill: none; stroke-width: 1.5; flex-shrink: 0; }
+
+/* ── SECTION ── */
+.section {
+  max-width: 1000px; margin: 0 auto;
+  padding: 96px 48px;
+}
+
+.s-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.45em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px;
+}
+
+.s-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 500; color: var(--ink); line-height: 1.08;
+  margin-bottom: 56px;
+}
+.s-title em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+/* ── SERVICES ── */
+#servicios { border-top: 1px solid var(--border); }
+
+.svc-list { display: flex; flex-direction: column; }
+
+.svc-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  align-items: center; gap: 24px;
+  padding: 22px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s, padding-left 0.2s;
+  position: relative;
+}
+
+.svc-row::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 0; background: var(--gold);
+  transition: width 0.25s;
+}
+
+.svc-row:hover, .svc-row.active {
+  background: var(--snow); padding-left: 24px;
+}
+.svc-row:hover::before, .svc-row.active::before { width: 2px; }
+
+.svc-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--tan); letter-spacing: 0.1em;
+}
+
+.svc-name {
+  font-family: 'Jost', sans-serif;
+  font-size: 16px; font-weight: 400; color: var(--ink);
+  transition: color 0.2s;
+}
+.svc-row:hover .svc-name, .svc-row.active .svc-name { color: var(--gold); }
+
+.svc-dur {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.05em;
+}
+
+.svc-chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--gold-lt);
+  color: var(--gold); background: var(--snow);
+}
+
+.svc-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 500;
+  color: var(--ink); text-align: right; white-space: nowrap;
+}
+.svc-price small {
+  display: block; font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--muted); font-weight: 400;
+  letter-spacing: 0.1em; text-align: right;
+}
+
+/* ── BOOKING ── */
+#reservar {
+  background: var(--snow);
+  border-top: 1px solid var(--border);
+}
+
+/* Calendar */
+.cal-card {
+  border: 1px solid var(--border);
+  background: var(--white);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.cal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px;
+  background: var(--beige);
+  border-bottom: 1px solid var(--border);
+}
+
+.cal-month-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 500; color: var(--ink);
+}
+
+.cal-arrows { display: flex; gap: 8px; }
+
+.cal-arr {
+  width: 30px; height: 30px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.cal-arr:hover { border-color: var(--gold); color: var(--gold); }
+
+.cal-body { padding: 16px 20px 24px; }
+
+.cal-dow {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.cal-dow span {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tan); text-align: center; padding: 8px 0;
+}
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+
+.c-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  cursor: pointer; color: var(--beige2);
+  border: 1px solid transparent; transition: all 0.15s; border-radius: 2px;
+}
+.c-cell.in-month { color: var(--warm); }
+.c-cell.is-today { color: var(--gold); border-color: var(--gold-lt); }
+.c-cell:hover:not(.empty):not(.past) { background: var(--beige); border-color: var(--border); }
+.c-cell.chosen { background: var(--gold); border-color: var(--gold); color: var(--white); }
+.c-cell.past { opacity: 0.3; cursor: not-allowed; }
+.c-cell.empty { cursor: default; }
+
+/* Slots */
+.slots-wrap { margin-bottom: 36px; }
+
+.slots-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.4em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+
+.slots-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px;
+}
+
+.t-slot {
+  padding: 10px 6px; text-align: center;
+  border: 1px solid var(--border);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+  background: var(--white);
+}
+.t-slot:hover { border-color: var(--gold-lt); color: var(--gold); background: var(--snow); }
+.t-slot.chosen { border-color: var(--gold); background: var(--gold); color: var(--white); }
+.t-slot.taken { opacity: 0.25; cursor: not-allowed; text-decoration: line-through; }
+
+/* Form */
+.form-card {
+  border: 1px solid var(--border);
+  background: var(--white);
+  margin-bottom: 32px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+@media (max-width: 600px) { .form-card { grid-template-columns: 1fr; } }
+
+.f-field {
+  padding: 20px 24px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.f-field.wide { grid-column: 1 / -1; border-right: none; }
+.f-field:nth-child(even):not(.wide) { border-right: none; }
+.f-field:last-child { border-bottom: none; }
+
+.f-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 10px;
+}
+
+.f-input {
+  background: transparent; border: none;
+  color: var(--ink); font-family: 'Jost', sans-serif;
+  font-size: 14px; font-weight: 300; outline: none; width: 100%;
+}
+.f-input::placeholder { color: var(--tan); }
+textarea.f-input { resize: none; height: 44px; }
+select.f-input { -webkit-appearance: none; }
+select.f-input option { background: var(--white); }
+
+/* Summary */
+.summary-card {
+  border: 1px solid var(--border);
+  background: var(--beige);
+  display: grid; grid-template-columns: 1fr 1fr;
+  margin-bottom: 0;
+}
+@media (max-width: 600px) { .summary-card { grid-template-columns: 1fr; } }
+
+.sum-left { padding: 28px 32px; }
+.sum-right {
+  padding: 28px 32px;
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-end;
+}
+
+.sum-row { margin-bottom: 18px; }
+.sum-row:last-child { margin-bottom: 0; }
+
+.sum-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px;
+}
+.sum-val {
+  font-family: 'Jost', sans-serif;
+  font-size: 14px; font-weight: 400; color: var(--warm);
+}
+
+.sum-total-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px; text-align: right;
+}
+.sum-total-amt {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; font-weight: 700; color: var(--gold);
+  line-height: 1; text-align: right;
+}
+
+.book-btn {
+  width: 100%; padding: 18px 32px;
+  background: var(--ink); color: var(--white);
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.25s;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.book-btn::after { content: '→'; }
+.book-btn:hover { background: var(--warm); }
+.book-btn:disabled { background: var(--tan); cursor: not-allowed; color: var(--muted); }
+
+/* ── SUCCESS ── */
+.success {
+  display: none; max-width: 520px; margin: 0 auto;
+  padding: 80px 24px; text-align: center;
+}
+.success.show { display: block; }
+
+.success-mark {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--gold); color: var(--white);
+  font-size: 28px; display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 32px;
+}
+
+.success h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px; font-weight: 500; color: var(--ink);
+  margin-bottom: 12px;
+}
+.success p {
+  font-size: 14px; color: var(--muted); line-height: 1.8; margin-bottom: 32px;
+}
+
+.conf-badge {
+  display: inline-block;
+  background: var(--beige);
+  border: 1px solid var(--gold-lt);
+  padding: 14px 40px; margin-bottom: 40px;
+  font-family: 'DM Mono', monospace;
+  font-size: 18px; letter-spacing: 0.3em; color: var(--gold);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink); color: var(--snow);
+  padding: 56px 72px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 24px;
+  border-top: 3px solid var(--gold);
+}
+
+.ft-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 500; letter-spacing: 0.05em;
+}
+.ft-brand em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+.ft-info {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em; line-height: 2.2;
+  color: rgba(255,255,255,0.35); text-align: right; text-transform: uppercase;
+}
+
+/* ── REVEAL ── */
+.rv { opacity: 0; transform: translateY(16px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.rv.in { opacity: 1; transform: none; }
+
+/* ── MIS CITAS ── */
+#miscitas { border-top: 1px solid var(--border); background: var(--snow); }
+
+.my-apt-card {
+  background: var(--white); border: 1px solid var(--border);
+  margin-bottom: 14px; overflow: hidden;
+  transition: box-shadow .2s;
+}
+.my-apt-card:hover { box-shadow: 0 4px 16px rgba(184,150,90,.1); }
+
+.my-apt-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; background: var(--beige);
+  border-bottom: 1px solid var(--border);
+}
+.my-apt-code {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: .25em; color: var(--gold);
+}
+.my-apt-status {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 2px;
+}
+.my-apt-status.confirmed { background: #edf4f0; color: #4a7c59; }
+.my-apt-status.pending   { background: #fdf3e3; color: #b87d2a; }
+.my-apt-status.cancelled { background: #fdf0f0; color: #9e4a4a; }
+.my-apt-status.rescheduled{ background: #f0f4fd; color: #4a5c9e; }
+
+.my-apt-body { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.my-apt-field { }
+.my-apt-lbl { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.my-apt-val { font-size: 13px; color: var(--warm); font-weight: 400; }
+
+.my-apt-actions { padding: 0 20px 16px; display: flex; gap: 8px; }
+.my-apt-btn {
+  padding: 8px 18px; border: 1px solid var(--border);
+  background: transparent; font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); cursor: pointer; transition: all .2s;
+}
+.my-apt-btn:hover { border-color: var(--gold); color: var(--gold); }
+.my-apt-btn.danger:hover { border-color: #9e4a4a; color: #9e4a4a; background: #fdf0f0; }
+.my-apt-btn.primary { background: var(--gold); border-color: var(--gold); color: var(--white); }
+.my-apt-btn.primary:hover { background: var(--gold2); }
+
+/* ── MODAL OVERLAY ── */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 900;
+  background: rgba(26,23,20,.5); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+
+.modal-box {
+  background: var(--white); border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  width: 460px; max-width: 95vw; padding: 32px;
+  position: relative; max-height: 90vh; overflow-y: auto;
+}
+
+.modal-box-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 20px;
+}
+.modal-box-title em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+.modal-close-btn {
+  position: absolute; top: 16px; right: 20px;
+  background: none; border: none; font-size: 22px;
+  color: var(--muted); cursor: pointer; line-height: 1;
+}
+
+.modal-info-row {
+  display: flex; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.modal-info-row:last-of-type { border-bottom: none; }
+.modal-info-row .mk { color: var(--muted); font-size: 12px; }
+.modal-info-row .mv { color: var(--warm); font-weight: 400; }
+
+.modal-warn {
+  background: #fdf3e3; border: 1px solid #f0d9a8;
+  padding: 12px 16px; margin: 16px 0;
+  font-size: 12px; color: #b87d2a; line-height: 1.6;
+}
+.modal-warn strong { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-act-btn {
+  flex: 1; padding: 12px; border: 1px solid var(--border);
+  background: transparent; font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); cursor: pointer; transition: all .2s;
+}
+.modal-act-btn.primary { background: var(--gold); border-color: var(--gold); color: var(--white); }
+.modal-act-btn.primary:hover { background: var(--gold2); }
+.modal-act-btn.danger { border-color: #9e4a4a; color: #9e4a4a; }
+.modal-act-btn.danger:hover { background: #fdf0f0; }
+.modal-act-btn:not(.primary):not(.danger):hover { border-color: var(--gold); color: var(--gold); }
+
+/* Reschedule form inside modal */
+.rsch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.rsch-field { display: flex; flex-direction: column; gap: 6px; }
+.rsch-field.wide { grid-column: 1/-1; }
+.rsch-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
+.rsch-input { border: 1px solid var(--border); background: var(--snow); padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 13px; color: var(--warm); outline: none; -webkit-appearance: none; }
+.rsch-input:focus { border-color: var(--gold); }
+
+/* Notification toast */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--white);
+  padding: 14px 28px; font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: .1em;
+  opacity: 0; transition: all .35s cubic-bezier(.16,1,.3,1);
+  z-index: 9999; white-space: nowrap; pointer-events: none;
+  border-bottom: 2px solid var(--gold);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-bottom-color: #4a7c59; }
+.toast.warning { border-bottom-color: #b87d2a; }
+
+/* My apts lookup form */
+.lookup-form {
+  display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap;
+}
+.lookup-input {
+  flex: 1; min-width: 200px;
+  border: 1px solid var(--border); background: var(--white);
+  padding: 12px 16px; font-family: 'Jost', sans-serif;
+  font-size: 14px; color: var(--warm); outline: none;
+}
+.lookup-input:focus { border-color: var(--gold); }
+.lookup-btn {
+  padding: 12px 28px; background: var(--gold); color: var(--white);
+  border: none; font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  cursor: pointer; transition: background .2s;
+}
+.lookup-btn:hover { background: var(--gold2); }
+
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="#" class="nav-logo">Status <em>Barber</em></a>
+  <ul class="nav-links">
+    <li><a href="#servicios">Servicios</a></li>
+    <li><a href="#reservar">Reservar</a></li>
+    <li><a href="#miscitas">Mis citas</a></li>
+  </ul>
+</nav>
+
+<!-- ── NOTIF ── -->
+<div class="notif" id="notif"></div>
+
+<!-- ── STICKY BAR ── -->
+<div class="sticky-bar" id="stickyBar">
+  <span id="stickyText">—</span>
+  <button class="sticky-bar-btn" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">Reservar →</button>
+</div>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-content">
+    <p class="hero-kicker">Barbería de élite · Medellín</p>
+    <h1 class="hero-title">Status<br><em>Barber</em><br>Studio</h1>
+    <p class="hero-sub">Since 2023</p>
+    <a href="#servicios" class="hero-cta">Ver servicios</a>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-visual-inner">
+      <div class="hero-big-letter">S</div>
+      <p class="hero-visual-tag">Est. 2023 · Medellín</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── INFO STRIP ── -->
+<div class="info-strip">
+  <div class="info-item">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    07:00 AM — 07:00 PM
+  </div>
+  <div class="info-item">
+    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Carrera 55 24A-06, Medellín
+  </div>
+  <div class="info-item">
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    5.0 · 218 reseñas
+  </div>
+  <div class="info-item">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Reservas online
+  </div>
+</div>
+
+<!-- ── SERVICIOS ── -->
+<section class="section" id="servicios">
+  <p class="s-label rv">Catálogo completo</p>
+  <h2 class="s-title rv">Nuestros <em>servicios</em></h2>
+
+  <div class="svc-list">
+
+    <div class="svc-row rv" data-svc="Barba o Afeitada" data-price="18000" data-dur="30 min">
+      <span class="svc-num">01</span>
+      <div>
+        <div class="svc-name">Barba o Afeitada</div>
+        <div class="svc-dur">30 min</div>
+      </div>
+      <div class="svc-chip">Popular</div>
+      <div class="svc-price">$18.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Corte solo" data-price="25000" data-dur="30 min">
+      <span class="svc-num">02</span>
+      <div>
+        <div class="svc-name">Corte solo</div>
+        <div class="svc-dur">30 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$25.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Corte + Afeitada" data-price="38000" data-dur="50 min">
+      <span class="svc-num">03</span>
+      <div>
+        <div class="svc-name">Corte + Afeitada</div>
+        <div class="svc-dur">50 min · Rasurada completa</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$38.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Corte + Barba" data-price="42000" data-dur="60 min">
+      <span class="svc-num">04</span>
+      <div>
+        <div class="svc-name">Corte + Barba</div>
+        <div class="svc-dur">60 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$42.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Corte + Barba + Cejas" data-price="44000" data-dur="60 min">
+      <span class="svc-num">05</span>
+      <div>
+        <div class="svc-name">Corte + Barba + Cejas</div>
+        <div class="svc-dur">60 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$44.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Corte + Cejas" data-price="30000" data-dur="40 min">
+      <span class="svc-num">06</span>
+      <div>
+        <div class="svc-name">Corte + Cejas</div>
+        <div class="svc-dur">40 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$30.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Marcación de cejas" data-price="8000" data-dur="10 min">
+      <span class="svc-num">07</span>
+      <div>
+        <div class="svc-name">Marcación de cejas</div>
+        <div class="svc-dur">10 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$8.000<small>COP</small></div>
+    </div>
+
+    <div class="svc-row rv" data-svc="Marcación de contornos" data-price="10000" data-dur="10 min">
+      <span class="svc-num">08</span>
+      <div>
+        <div class="svc-name">Marcación de contornos</div>
+        <div class="svc-dur">10 min</div>
+      </div>
+      <div></div>
+      <div class="svc-price">$10.000<small>COP</small></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── RESERVAR ── -->
+<section class="section" id="reservar">
+  <div id="bookingForm">
+    <p class="s-label rv">Agenda tu visita</p>
+    <h2 class="s-title rv">Reserva tu <em>cita</em></h2>
+
+    <!-- CALENDAR -->
+    <div class="cal-card rv">
+      <div class="cal-head">
+        <div class="cal-month-name" id="calMonth">—</div>
+        <div class="cal-arrows">
+          <button class="cal-arr" id="prevMonth">‹</button>
+          <button class="cal-arr" id="nextMonth">›</button>
+        </div>
+      </div>
+      <div class="cal-body">
+        <div class="cal-dow">
+          <span>Dom</span><span>Lun</span><span>Mar</span>
+          <span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- SLOTS -->
+    <div class="slots-wrap rv" id="slotsWrap" style="display:none;">
+      <p class="slots-title">Elige tu horario</p>
+      <div class="slots-grid" id="slotsGrid"></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-card rv">
+      <div class="f-field">
+        <label class="f-label">Nombre completo</label>
+        <input class="f-input" type="text" id="fNombre" placeholder="Tu nombre">
+      </div>
+      <div class="f-field">
+        <label class="f-label">Teléfono / WhatsApp</label>
+        <input class="f-input" type="tel" id="fTel" placeholder="+57 300 000 0000">
+      </div>
+      <div class="f-field wide">
+        <label class="f-label">Correo electrónico</label>
+        <input class="f-input" type="email" id="fEmail" placeholder="tu@correo.com">
+      </div>
+      <div class="f-field wide" style="border-bottom:none;">
+        <label class="f-label">Notas al barbero (opcional)</label>
+        <textarea class="f-input" id="fNotas" placeholder="Diseño, referencias, preferencias..."></textarea>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-card rv">
+      <div class="sum-left">
+        <div class="sum-row">
+          <div class="sum-key">Servicio</div>
+          <div class="sum-val" id="sumSvc">—</div>
+        </div>
+        <div class="sum-row">
+          <div class="sum-key">Fecha</div>
+          <div class="sum-val" id="sumDate">—</div>
+        </div>
+        <div class="sum-row">
+          <div class="sum-key">Hora</div>
+          <div class="sum-val" id="sumTime">—</div>
+        </div>
+        <div class="sum-row">
+          <div class="sum-key">Duración</div>
+          <div class="sum-val" id="sumDur">—</div>
+        </div>
+      </div>
+      <div class="sum-right">
+        <div class="sum-total-label">Total a pagar</div>
+        <div class="sum-total-amt" id="sumPrice">—</div>
+      </div>
+    </div>
+
+    <button class="book-btn" id="bookBtn" disabled>Confirmar reserva</button>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success" id="successScreen">
+    <div class="success-mark">✓</div>
+    <h2>¡Cita confirmada!</h2>
+    <p>Tu reserva ha sido registrada con éxito.<br>Te esperamos en Status Barber Studio.<br>Carrera 55 24A-06, Medellín, Bello.</p>
+    <div class="conf-badge" id="confCode">—</div>
+    <br><br>
+    <a href="#servicios" class="hero-cta" style="margin:0 auto;" onclick="resetForm()">Nueva reserva</a>
+  </div>
+</section>
+
+<!-- ── MIS CITAS ── -->
+<section class="section" id="miscitas" style="border-top:1px solid var(--border);background:var(--snow);">
+  <p class="s-label rv">Gestión</p>
+  <h2 class="s-title rv">Mis <em>citas</em></h2>
+  <div class="lookup-form rv">
+    <input class="lookup-input" type="text" id="lookupCode" placeholder="Código de reserva (ej: SBS-AB1C2D)">
+    <input class="lookup-input" type="email" id="lookupEmail" placeholder="Tu correo electrónico" style="max-width:260px;">
+    <button class="lookup-btn" onclick="lookupApt()">Buscar cita</button>
+  </div>
+  <div id="myAptsList"></div>
+</section>
+<div class="modal-backdrop" id="cancelModal">
+  <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeClientModal('cancelModal')">×</button>
+    <div class="modal-box-title">Cancelar <em>cita</em></div>
+    <div id="cancelModalContent"></div>
+    <div style="background:#fdf3e3;border:1px solid #f0d9a8;color:#b87d2a;padding:12px 16px;margin:16px 0;font-size:12px;line-height:1.6;">
+      <strong style="display:block;font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">⚠ Atención</strong>
+      Al cancelar se notificará al barbero. Esta acción no se puede deshacer.
+    </div>
+    <div class="modal-actions">
+      <button class="modal-act-btn" onclick="closeClientModal('cancelModal')">Volver</button>
+      <button class="modal-act-btn danger" onclick="confirmCancelClient()">Confirmar cancelación</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="reschedModal">
+  <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeClientModal('reschedModal')">×</button>
+    <div class="modal-box-title">Reagendar <em>cita</em></div>
+    <div id="reschedModalContent"></div>
+    <div class="rsch-grid">
+      <div class="rsch-field"><label class="rsch-label">Nueva fecha</label><input class="rsch-input" type="date" id="rschFecha"></div>
+      <div class="rsch-field"><label class="rsch-label">Nueva hora</label><select class="rsch-input" id="rschHora"><option value="">Seleccionar</option></select></div>
+      <div class="rsch-field wide"><label class="rsch-label">Motivo (opcional)</label><input class="rsch-input" type="text" id="rschMotivo" placeholder="¿Por qué reagendas?"></div>
+    </div>
+    <div style="background:#f0f4fd;border:1px solid #c5d0f0;color:#4a5c9e;padding:12px 16px;margin-top:14px;font-size:12px;line-height:1.6;">
+      <strong style="display:block;font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">📅 Reagendamiento</strong>
+      Se notificará al barbero con la nueva fecha solicitada.
+    </div>
+    <div class="modal-actions">
+      <button class="modal-act-btn" onclick="closeClientModal('reschedModal')">Cancelar</button>
+      <button class="modal-act-btn primary" onclick="confirmReschedClient()">Solicitar reagendamiento</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="clientToast"></div>
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="ft-brand">Status <em>Barber</em> Studio</div>
+  <div class="ft-info">
+    Carrera 55 24A-06 · Medellín, Bello<br>
+    07:00 AM – 07:00 PM · Since 2023
+  </div>
+</footer>
+
+<script>
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+
+let st = { svc:null, price:null, dur:null, date:null, time:null, vd: new Date() };
+
+/* SLOTS */
+function genSlots() {
+  const s = [];
+  for (let h=7; h<19; h++) {
+    s.push(`${String(h).padStart(2,'0')}:00`);
+    s.push(`${String(h).padStart(2,'0')}:30`);
+  }
+  return s;
+}
+function fakeTaken(ds) {
+  const seed = ds.split('-').reduce((a,b)=>a+parseInt(b),0);
+  return genSlots().filter((_,i)=>(seed+i*7)%5===0);
+}
+
+/* CALENDAR */
+function drawCal() {
+  const y = st.vd.getFullYear(), m = st.vd.getMonth();
+  document.getElementById('calMonth').textContent = `${MONTHS[m]} ${y}`;
+  const first = new Date(y,m,1).getDay();
+  const days  = new Date(y,m+1,0).getDate();
+  const g = document.getElementById('calGrid'); g.innerHTML='';
+  for (let i=0;i<first;i++) { const d=document.createElement('div'); d.className='c-cell empty'; g.appendChild(d); }
+  for (let d=1;d<=days;d++) {
+    const el = document.createElement('div');
+    const cd = new Date(y,m,d);
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    el.className = 'c-cell in-month'; el.textContent = d;
+    if (cd < TODAY) { el.classList.add('past'); }
+    else {
+      if (cd.getTime()===TODAY.getTime()) el.classList.add('is-today');
+      if (st.date===ds) el.classList.add('chosen');
+      el.addEventListener('click',()=>pickDate(ds,el));
+    }
+    g.appendChild(el);
+  }
+}
+
+function pickDate(ds,el) {
+  st.date=ds; st.time=null;
+  document.querySelectorAll('.c-cell').forEach(c=>c.classList.remove('chosen'));
+  el.classList.add('chosen');
+  drawSlots(ds); sync();
+}
+
+function drawSlots(ds) {
+  const w = document.getElementById('slotsWrap'), g = document.getElementById('slotsGrid');
+  w.style.display='block'; g.innerHTML='';
+  const taken = fakeTaken(ds);
+  genSlots().forEach(t=>{
+    const el = document.createElement('div'); el.className='t-slot'; el.textContent=t;
+    if (taken.includes(t)) { el.classList.add('taken'); }
+    else {
+      el.addEventListener('click',()=>{
+        document.querySelectorAll('.t-slot').forEach(s=>s.classList.remove('chosen'));
+        el.classList.add('chosen'); st.time=t; sync(); ready();
+      });
+    }
+    g.appendChild(el);
+  });
+}
+
+document.getElementById('prevMonth').addEventListener('click',()=>{ st.vd.setMonth(st.vd.getMonth()-1); drawCal(); });
+document.getElementById('nextMonth').addEventListener('click',()=>{ st.vd.setMonth(st.vd.getMonth()+1); drawCal(); });
+
+/* SERVICES */
+document.querySelectorAll('.svc-row').forEach(r=>{
+  r.addEventListener('click',()=>{
+    document.querySelectorAll('.svc-row').forEach(s=>s.classList.remove('active'));
+    r.classList.add('active');
+    st.svc=r.dataset.svc; st.price=parseInt(r.dataset.price); st.dur=r.dataset.dur;
+    document.getElementById('stickyText').textContent = `${st.svc}  ·  $${st.price.toLocaleString('es-CO')}`;
+    document.getElementById('stickyBar').classList.add('show');
+    sync(); ready();
+    notify(`${st.svc} seleccionado`);
+  });
+});
+
+/* SYNC SUMMARY */
+function sync() {
+  document.getElementById('sumSvc').textContent   = st.svc  || '—';
+  document.getElementById('sumDur').textContent   = st.dur  || '—';
+  document.getElementById('sumTime').textContent  = st.time || '—';
+  document.getElementById('sumPrice').textContent = st.price ? `$${st.price.toLocaleString('es-CO')}` : '—';
+  if (st.date) {
+    const [y,m,d]=st.date.split('-');
+    document.getElementById('sumDate').textContent=`${d} de ${MONTHS[parseInt(m)-1]} ${y}`;
+  } else { document.getElementById('sumDate').textContent='—'; }
+}
+
+function ready() {
+  document.getElementById('bookBtn').disabled = !(st.svc && st.date && st.time);
+}
+
+['fNombre','fTel','fEmail'].forEach(id=>document.getElementById(id).addEventListener('input',ready));
+
+/* ── STORAGE shared with admin ── */
+const SBS_KEY='sbs_appointments';
+function getStoredApts(){try{return JSON.parse(localStorage.getItem(SBS_KEY)||'[]');}catch(e){return[];}}
+function saveStoredApts(a){localStorage.setItem(SBS_KEY,JSON.stringify(a));}
+function fmtDisp(ds){if(!ds)return'—';const[y,m,d]=ds.split('-');return d+' de '+MONTHS[parseInt(m)-1]+' '+y;}
+
+/* ── SUBMIT single handler ── */
+document.getElementById('bookBtn').addEventListener('click',()=>{
+  const nombre=document.getElementById('fNombre').value.trim();
+  const email=document.getElementById('fEmail').value.trim();
+  const tel=document.getElementById('fTel').value.trim();
+  const notas=document.getElementById('fNotas').value.trim();
+  if(!nombre){notify('Ingresa tu nombre para continuar');return;}
+  const code='SBS-'+Math.random().toString(36).substr(2,6).toUpperCase();
+  const apt={code,nombre,email,tel,notas,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',createdAt:new Date().toISOString()};
+  const apts=getStoredApts(); apts.push(apt); saveStoredApts(apts);
+  sendNotification({trigger:'new_booking',
+    apt:{code,name:nombre,email,tel,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',notes:notas},
+    toClient:{email,tel},toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+  document.getElementById('confCode').textContent=code;
+  document.getElementById('bookingForm').style.display='none';
+  document.getElementById('successScreen').classList.add('show');
+  window.scrollTo({top:document.getElementById('reservar').offsetTop-80,behavior:'smooth'});
+});
+
+function resetForm() {
+  st = { svc:null, price:null, dur:null, date:null, time:null, vd:new Date() };
+  document.getElementById('bookingForm').style.display='block';
+  document.getElementById('successScreen').classList.remove('show');
+  document.querySelectorAll('.svc-row').forEach(s=>s.classList.remove('active'));
+  document.getElementById('stickyBar').classList.remove('show');
+  document.getElementById('slotsWrap').style.display='none';
+  ['fNombre','fTel','fEmail','fNotas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bookBtn').disabled=true;
+  sync(); drawCal();
+}
+
+/* NOTIFY */
+function notify(msg) {
+  const el=document.getElementById('notif'); el.textContent=msg;
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+/* REVEAL */
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting) e.target.classList.add('in');}),{threshold:0.08});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+drawCal(); sync();
+
+/* ── MIS CITAS ── */
+let activeAptCode=null;
+
+function lookupApt(){
+  const code=document.getElementById('lookupCode').value.trim().toUpperCase();
+  const email=document.getElementById('lookupEmail').value.trim().toLowerCase();
+  const list=document.getElementById('myAptsList');
+  if(!code&&!email){showToastClient('Ingresa tu código o correo','warning');return;}
+  let apts=getStoredApts();
+  if(!apts.length){
+    apts=[{code:'SBS-DEMO01',nombre:'Cliente Demo',email:'demo@correo.com',tel:'+57 300 000 0000',
+      svc:'Corte + Barba',price:42000,dur:'60 min',
+      date:new Date().toISOString().split('T')[0],
+      time:'10:00',status:'pending',createdAt:new Date().toISOString()}];
+    saveStoredApts(apts);
+  }
+  const results=apts.filter(a=>(code&&a.code===code)||(email&&(a.email||'').toLowerCase()===email));
+  if(!results.length){list.innerHTML='<div style="text-align:center;padding:40px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--tan)">No se encontraron citas</div>';return;}
+  renderMyApts(results);
+}
+
+function renderMyApts(apts){
+  const list=document.getElementById('myAptsList');
+  const sl={pending:'Pendiente',confirmed:'Confirmada',cancelled:'Cancelada',rescheduled:'Reagendada'};
+  list.innerHTML=apts.map(a=>`
+    <div class="my-apt-card">
+      <div class="my-apt-head">
+        <span class="my-apt-code">${a.code}</span>
+        <span class="my-apt-status ${a.status}">${sl[a.status]||a.status}</span>
+      </div>
+      <div class="my-apt-body">
+        <div class="my-apt-field"><div class="my-apt-lbl">Servicio</div><div class="my-apt-val">${a.svc}</div></div>
+        <div class="my-apt-field"><div class="my-apt-lbl">Fecha</div><div class="my-apt-val">${fmtDisp(a.date)}</div></div>
+        <div class="my-apt-field"><div class="my-apt-lbl">Hora</div><div class="my-apt-val">${a.time} · ${a.dur}</div></div>
+        <div class="my-apt-field"><div class="my-apt-lbl">Total</div><div class="my-apt-val" style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">$${Number(a.price).toLocaleString('es-CO')}</div></div>
+      </div>
+      ${a.status!=='cancelled'?`<div class="my-apt-actions">
+        <button class="my-apt-btn" onclick="openReschedClient('${a.code}')">Reagendar</button>
+        <button class="my-apt-btn danger" onclick="openCancelClient('${a.code}')">Cancelar cita</button>
+      </div>`:`<div style="padding:0 20px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--tan)">Cita cancelada</div>`}
+    </div>`).join('');
+}
+
+function openCancelClient(code){
+  const a=getStoredApts().find(x=>x.code===code); if(!a) return;
+  activeAptCode=code;
+  document.getElementById('cancelModalContent').innerHTML=`
+    <div class="modal-info-row"><span class="mk">Código</span><span class="mv">${a.code}</span></div>
+    <div class="modal-info-row"><span class="mk">Servicio</span><span class="mv">${a.svc}</span></div>
+    <div class="modal-info-row"><span class="mk">Fecha</span><span class="mv">${fmtDisp(a.date)} a las ${a.time}</span></div>
+    <div class="modal-info-row"><span class="mk">Valor</span><span class="mv" style="font-family:'Playfair Display',serif;font-size:18px;color:var(--gold)">$${Number(a.price).toLocaleString('es-CO')}</span></div>`;
+  openClientModal('cancelModal');
+}
+
+function confirmCancelClient(){
+  const apts=getStoredApts();
+  const a=apts.find(x=>x.code===activeAptCode); if(!a) return;
+  a.status='cancelled'; saveStoredApts(apts);
+  closeClientModal('cancelModal');
+  sendNotification({trigger:'cancel_by_client',
+    apt:{code:a.code,name:a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:a.date,time:a.time,status:'cancelled'},
+    toClient:{email:a.email,tel:a.tel},
+    toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+  showToastClient('Cita cancelada. Se notificó al barbero.','warning');
+  lookupApt();
+}
+
+function openReschedClient(code){
+  const a=getStoredApts().find(x=>x.code===code); if(!a) return;
+  activeAptCode=code;
+  document.getElementById('reschedModalContent').innerHTML=`
+    <div class="modal-info-row"><span class="mk">Servicio</span><span class="mv">${a.svc}</span></div>
+    <div class="modal-info-row"><span class="mk">Fecha actual</span><span class="mv">${fmtDisp(a.date)} a las ${a.time}</span></div>`;
+  const sel=document.getElementById('rschHora'); sel.innerHTML='<option value="">Seleccionar</option>';
+  for(let h=7;h<19;h++){['00','30'].forEach(m=>{const o=document.createElement('option');o.value=String(h).padStart(2,'0')+':'+m;o.textContent=String(h).padStart(2,'0')+':'+m;sel.appendChild(o);});}
+  const tom=new Date(); tom.setDate(tom.getDate()+1);
+  document.getElementById('rschFecha').min=tom.toISOString().split('T')[0];
+  document.getElementById('rschFecha').value='';
+  document.getElementById('rschMotivo').value='';
+  openClientModal('reschedModal');
+}
+
+function confirmReschedClient(){
+  const newDate=document.getElementById('rschFecha').value;
+  const newTime=document.getElementById('rschHora').value;
+  const motivo=document.getElementById('rschMotivo').value.trim();
+  if(!newDate||!newTime){showToastClient('Selecciona fecha y hora','warning');return;}
+  const apts=getStoredApts();
+  const a=apts.find(x=>x.code===activeAptCode); if(!a) return;
+  const oldDate=a.date, oldTime=a.time;
+  a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;
+  saveStoredApts(apts);
+  closeClientModal('reschedModal');
+  sendNotification({trigger:'reschedule_by_client',
+    apt:{code:a.code,name:a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:newDate,time:newTime,status:'rescheduled'},
+    oldDate,oldTime,
+    toClient:{email:a.email,tel:a.tel},
+    toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+  showToastClient('Solicitud de reagendamiento enviada.','success');
+  lookupApt();
+}
+
+function openClientModal(id){document.getElementById(id).classList.add('open');}
+function closeClientModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===e.currentTarget)m.classList.remove('open');}));
+
+function showToastClient(msg,type){
+  const t=document.getElementById('clientToast');
+  t.textContent=msg; t.className='toast'+(type?' '+type:'');
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ── NOTIFICATIONS ── */
+function sendNotification(payload){
+  const APPS_SCRIPT_URL='https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
+  console.log('[SBS Notif]',payload.trigger, payload);
+  /* PRODUCTION — uncomment after deploying Apps Script:
+  fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  */
+}
+
+</script>
+</body>
+</html>
