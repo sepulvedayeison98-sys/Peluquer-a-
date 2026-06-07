@@ -1040,15 +1040,34 @@ function saveNewApt(){
 }
 
 /* ── HORARIO ── */
-const horarioDias=[
-  {name:'Lunes',open:true,start:'07:00',end:'19:00'},
-  {name:'Martes',open:true,start:'07:00',end:'19:00'},
-  {name:'Miércoles',open:true,start:'07:00',end:'19:00'},
-  {name:'Jueves',open:true,start:'07:00',end:'19:00'},
-  {name:'Viernes',open:true,start:'07:00',end:'19:00'},
-  {name:'Sábado',open:true,start:'07:00',end:'16:00'},
-  {name:'Domingo',open:false,start:'',end:''},
+const HORARIO_KEY = 'sbs_horario';
+const HORARIO_DEFAULT = [
+  {name:'Lunes',    open:true, start:'07:00',end:'19:00'},
+  {name:'Martes',   open:true, start:'07:00',end:'19:00'},
+  {name:'Miércoles',open:true, start:'07:00',end:'19:00'},
+  {name:'Jueves',   open:true, start:'07:00',end:'19:00'},
+  {name:'Viernes',  open:true, start:'07:00',end:'19:00'},
+  {name:'Sábado',   open:true, start:'07:00',end:'16:00'},
+  {name:'Domingo',  open:false,start:'',     end:''},
 ];
+function loadHorario(){
+  try{const s=localStorage.getItem(HORARIO_KEY);return s?JSON.parse(s):null;}catch(e){return null;}
+}
+function persistHorario(){localStorage.setItem(HORARIO_KEY,JSON.stringify(horarioDias));}
+const horarioDias = loadHorario() || HORARIO_DEFAULT.map(d=>({...d}));
+
+/* Convierte "HH:MM" a minutos desde medianoche */
+function toMin(t){if(!t)return 0;const[h,m]=t.split(':');return parseInt(h)*60+parseInt(m||0);}
+
+function slotBlocked(dayIdx, slotH){
+  const d = horarioDias[dayIdx];
+  if(!d || !d.open) return true;
+  const slotMin = toMin(slotH);
+  const startMin = toMin(d.start);
+  const endMin   = toMin(d.end);
+  return slotMin < startMin || slotMin >= endMin;
+}
+
 function renderHorario(){
   const cfg=document.getElementById('horarioConfig'); cfg.innerHTML='';
   horarioDias.forEach((d,i)=>{
@@ -1063,6 +1082,7 @@ function renderHorario(){
       ${!d.open?'<span class="dia-closed">Cerrado</span>':''}
     </div>`;
   });
+
   const grid=document.getElementById('horarioGrid'); grid.innerHTML='';
   const hours=[];
   for(let h=7;h<19;h++) hours.push(`${String(h).padStart(2,'0')}:00`);
@@ -1080,20 +1100,42 @@ function renderHorario(){
       const ds=fmtDate(dd);
       const apt=appointments.find(a=>a.date===ds&&a.time===h&&a.status!=='cancelled');
       const el=document.createElement('div');el.className='h-slot';
-      const dayOpen=horarioDias[col-1]?.open;
-      if(!dayOpen){el.classList.add('blocked');}
-      else if(apt){el.classList.add('has-apt');el.setAttribute('data-label',apt.name.split(' ')[0]);el.title=`${apt.name} — ${apt.svc}`;}
+      if(slotBlocked(col-1, h)){
+        el.classList.add('blocked');
+      } else if(apt){
+        el.classList.add('has-apt');
+        el.setAttribute('data-label',apt.name.split(' ')[0]);
+        el.title=`${apt.name} — ${apt.svc}`;
+      }
       grid.appendChild(el);
     }
   });
 }
-function toggleDia(i){horarioDias[i].open=!horarioDias[i].open;renderHorario();}
+
+function toggleDia(i){
+  /* Leer horas actuales del DOM antes de re-renderizar */
+  if(horarioDias[i].open){
+    horarioDias[i].start=document.getElementById(`start-${i}`)?.value||horarioDias[i].start;
+    horarioDias[i].end  =document.getElementById(`end-${i}`)?.value  ||horarioDias[i].end;
+  }
+  horarioDias[i].open=!horarioDias[i].open;
+  renderHorario();
+}
+
 function saveHorario(){
   horarioDias.forEach((d,i)=>{
-    d.open=document.getElementById(`toggle-${i}`)?.classList.contains('on');
-    if(d.open){d.start=document.getElementById(`start-${i}`)?.value||d.start;d.end=document.getElementById(`end-${i}`)?.value||d.end;}
+    const toggleEl=document.getElementById(`toggle-${i}`);
+    d.open = toggleEl ? toggleEl.classList.contains('on') : d.open;
+    if(d.open){
+      const s=document.getElementById(`start-${i}`)?.value;
+      const e=document.getElementById(`end-${i}`)?.value;
+      if(s) d.start=s;
+      if(e) d.end=e;
+    }
   });
-  alert('Horario guardado ✓'); renderHorario();
+  persistHorario();
+  renderHorario();
+  showAdminToast('Horario guardado correctamente', 'success');
 }
 
 /* ── INGRESOS ── */
