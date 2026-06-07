@@ -293,11 +293,129 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 .notif-panel{display:none;white-space:pre-wrap;word-break:break-word}
 .notif-panel.show{display:block}
 
+
+/* ── LOGIN SCREEN ── */
+#loginScreen{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#loginScreen.hidden{display:none}
+
+.login-box{
+  width:100%;max-width:380px;
+  border:1px solid rgba(255,255,255,.08);
+  border-top:3px solid var(--gold);
+  padding:40px 36px;
+  background:rgba(255,255,255,.03);
+}
+
+.login-logo{
+  text-align:center;margin-bottom:32px;
+}
+.login-logo-main{
+  font-family:'Playfair Display',serif;
+  font-size:32px;font-weight:700;color:var(--white);
+  letter-spacing:0.04em;line-height:1;
+}
+.login-logo-main em{font-style:italic;color:var(--gold);font-weight:400}
+.login-logo-sub{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-top:8px;
+}
+.login-divider{
+  height:1px;
+  background:linear-gradient(to right,transparent,rgba(184,150,90,.4),transparent);
+  margin:24px 0;
+}
+
+.login-field{margin-bottom:18px}
+.login-label{
+  display:block;
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:0.35em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;
+}
+.login-input{
+  width:100%;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  border-bottom-color:rgba(184,150,90,.4);
+  color:var(--white);
+  font-family:'Jost',sans-serif;font-size:14px;font-weight:300;
+  padding:12px 14px;outline:none;
+  transition:border-color .2s;
+  -webkit-appearance:none;
+}
+.login-input:focus{border-color:var(--gold);}
+.login-input::placeholder{color:rgba(255,255,255,.2);}
+
+.login-btn{
+  width:100%;padding:14px;
+  background:var(--gold);border:none;
+  color:var(--ink);
+  font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:0.35em;text-transform:uppercase;
+  cursor:pointer;transition:background .2s;
+  font-weight:500;margin-top:8px;
+}
+.login-btn:hover{background:var(--gold2);color:var(--white);}
+
+.login-error{
+  background:rgba(158,74,74,.15);
+  border:1px solid rgba(158,74,74,.3);
+  color:#e8a0a0;
+  font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:.1em;
+  padding:10px 14px;margin-top:14px;
+  display:none;
+}
+.login-error.show{display:block}
+
+.login-attempts{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:.15em;
+  color:rgba(255,255,255,.2);
+  text-align:center;margin-top:16px;
+}
+
+/* Body locked while login visible */
+body.locked{overflow:hidden}
+
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-main">Status <em>Barber</em></div>
+      <div class="login-logo-sub">Panel del barbero</div>
+    </div>
+    <div class="login-divider"></div>
+
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input class="login-input" type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input class="login-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') attemptLogin()">
+    </div>
+
+    <button class="login-btn" onclick="attemptLogin()">Ingresar al panel</button>
+
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    <div class="login-attempts" id="loginAttempts"></div>
+  </div>
+</div>
+
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
@@ -328,6 +446,9 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
         <div class="sb-user-role">Status Studio</div>
       </div>
     </div>
+    <button onclick="logout()" style="margin-top:14px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='rgba(184,150,90,.4)';this.style.color='rgba(184,150,90,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.3)'">
+      Cerrar sesión
+    </button>
   </div>
 </aside>
 
@@ -1081,6 +1202,93 @@ function showAdminToast(msg, type=''){
   t.textContent=msg; t.className='admin-toast'+(type?' '+type:'');
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500);
 }
+
+
+/* ══════════════════════════════════════
+   LOGIN SYSTEM
+   Cambia USER y PASS antes de subir a GitHub
+══════════════════════════════════════ */
+const AUTH = {
+  // ⚠️ CAMBIA ESTOS VALORES ANTES DE PUBLICAR
+  USER: 'statusbarber',
+  PASS: 'studio2023',
+  MAX_ATTEMPTS: 5,
+  LOCKOUT_MINUTES: 15,
+  SESSION_KEY: 'sbs_admin_session'
+};
+
+let loginAttempts = 0;
+let lockedUntil = null;
+
+function checkSession() {
+  const session = sessionStorage.getItem(AUTH.SESSION_KEY);
+  if (session === 'authenticated') {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.body.classList.remove('locked');
+  } else {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.body.classList.add('locked');
+  }
+}
+
+function attemptLogin() {
+  // Check lockout
+  if (lockedUntil && new Date() < lockedUntil) {
+    const mins = Math.ceil((lockedUntil - new Date()) / 60000);
+    showLoginError(`Demasiados intentos. Espera ${mins} min.`);
+    return;
+  }
+
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+
+  if (user === AUTH.USER && pass === AUTH.PASS) {
+    // Success
+    sessionStorage.setItem(AUTH.SESSION_KEY, 'authenticated');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.body.classList.remove('locked');
+    loginAttempts = 0;
+    document.getElementById('loginAttempts').textContent = '';
+  } else {
+    loginAttempts++;
+    const remaining = AUTH.MAX_ATTEMPTS - loginAttempts;
+
+    if (loginAttempts >= AUTH.MAX_ATTEMPTS) {
+      lockedUntil = new Date(Date.now() + AUTH.LOCKOUT_MINUTES * 60000);
+      showLoginError(`Cuenta bloqueada por ${AUTH.LOCKOUT_MINUTES} minutos.`);
+      document.getElementById('loginAttempts').textContent = '';
+    } else {
+      showLoginError('Usuario o contraseña incorrectos');
+      document.getElementById('loginAttempts').textContent =
+        `${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''}`;
+    }
+
+    // Shake animation
+    const box = document.querySelector('.login-box');
+    box.style.transform = 'translateX(-8px)';
+    setTimeout(() => box.style.transition = 'transform .1s', 0);
+    setTimeout(() => box.style.transform = 'translateX(8px)', 100);
+    setTimeout(() => box.style.transform = 'translateX(0)', 200);
+    setTimeout(() => box.style.transition = '', 300);
+
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function logout() {
+  sessionStorage.removeItem(AUTH.SESSION_KEY);
+  location.reload();
+}
+
+// Check on load
+checkSession();
 
 /* ── INIT ── */
 renderDashTable();
