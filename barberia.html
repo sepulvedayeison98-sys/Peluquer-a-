@@ -129,6 +129,7 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 .badge.confirmed{background:var(--green-lt);color:var(--green)}
 .badge.cancelled{background:var(--rose-lt);color:var(--rose)}
 .badge.done{background:var(--beige);color:var(--muted)}
+.badge.rescheduled{background:#f0f4fd;color:#4a5c9e}
 
 /* ROW ACTIONS */
 .row-actions{display:flex;gap:6px}
@@ -384,6 +385,46 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 /* Body locked while login visible */
 body.locked{overflow:hidden}
 
+/* ── HORARIO LAYOUT (reemplaza inline style) ── */
+.horario-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:20px;
+  align-items:start;
+}
+.horario-config-card{
+  position:sticky;
+  top:68px;          /* debajo del topbar */
+  max-height:calc(100vh - 90px);
+  overflow-y:auto;
+}
+
+/* ── RESPONSIVE OVERRIDES ── */
+@media(max-width:900px){
+  .horario-layout{grid-template-columns:1fr}
+  .horario-config-card{position:static;max-height:none;overflow-y:visible}
+}
+@media(max-width:700px){
+  .content{padding:16px 14px!important}
+  .topbar{padding:0 14px}
+  .topbar-date{display:none}
+  .kpi-grid{grid-template-columns:1fr 1fr!important}
+  .kpi-value{font-size:26px!important}
+  .ing-summary{grid-template-columns:1fr!important}
+  .ing-cell{border-right:none!important;border-bottom:1px solid var(--border)}
+  .nf-grid{grid-template-columns:1fr!important}
+  .rsch-grid{grid-template-columns:1fr!important}
+  .rsch-field.wide{grid-column:1!important}
+  .nf-field.wide{grid-column:1!important}
+  .modal{padding:24px 18px}
+  .modal-actions{flex-direction:column}
+  .modal-btn{flex:none;width:100%}
+  .view-tabs{flex-wrap:wrap}
+}
+
+/* Fix: content overflow-x must not clip table scroll children */
+.content{overflow-x:visible!important}
+
 </style>
 </head>
 <body>
@@ -587,15 +628,15 @@ body.locked{overflow:hidden}
 
   <!-- ═══ HORARIO ═══ -->
   <div class="content" id="page-horario">
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;">
+    <div class="horario-layout">
       <div class="card">
         <div class="card-head">
           <div class="card-head-title">Vista <em>semanal</em></div>
-          <span class="card-action">Semana del 2–8 Jun</span>
+          <span class="card-action" id="horarioWeekLabel">—</span>
         </div>
         <div class="horario-scroll"><div class="horario-grid" id="horarioGrid"></div></div>
       </div>
-      <div class="card" style="height:fit-content;">
+      <div class="card horario-config-card">
         <div class="card-head">
           <div class="card-head-title">Configurar <em>horario</em></div>
         </div>
@@ -1088,6 +1129,10 @@ function renderHorario(){
   for(let h=7;h<19;h++) hours.push(`${String(h).padStart(2,'0')}:00`);
   const cols=['','Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const weekStart=new Date(TODAY); weekStart.setDate(TODAY.getDate()-TODAY.getDay()+1);
+  /* Actualizar etiqueta de semana */
+  const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const wLabel=document.getElementById('horarioWeekLabel');
+  if(wLabel) wLabel.textContent=`${weekStart.getDate()} – ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()].slice(0,3)}`;
   cols.forEach((c,i)=>{
     const el=document.createElement('div'); el.className='h-col-header';
     if(i>0){const dd=new Date(weekStart);dd.setDate(weekStart.getDate()+i-1);el.textContent=`${c} ${dd.getDate()}`;if(fmtDate(dd)===todayStr)el.classList.add('today-col');}

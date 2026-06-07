@@ -62,6 +62,11 @@ nav {
   color: var(--muted); text-decoration: none; transition: color 0.2s;
 }
 .nav-links a:hover { color: var(--gold); }
+@media(max-width:600px){
+  nav { padding: 0 20px; }
+  .nav-links { gap: 16px; }
+  .nav-links li:first-child { display: none; } /* oculta "Servicios" en móvil */
+}
 
 /* ── NOTIF ── */
 .notif {
@@ -564,10 +569,11 @@ footer {
   letter-spacing: .2em; text-transform: uppercase;
   padding: 4px 10px; border-radius: 2px;
 }
-.my-apt-status.confirmed { background: #edf4f0; color: #4a7c59; }
-.my-apt-status.pending   { background: #fdf3e3; color: #b87d2a; }
-.my-apt-status.cancelled { background: #fdf0f0; color: #9e4a4a; }
-.my-apt-status.rescheduled{ background: #f0f4fd; color: #4a5c9e; }
+.my-apt-status.confirmed   { background: #edf4f0; color: #4a7c59; }
+.my-apt-status.pending     { background: #fdf3e3; color: #b87d2a; }
+.my-apt-status.cancelled   { background: #fdf0f0; color: #9e4a4a; }
+.my-apt-status.rescheduled { background: #f0f4fd; color: #4a5c9e; }
+.my-apt-status.done        { background: #f2ede6; color: #8c7d6e; }
 
 .my-apt-body { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .my-apt-field { }
@@ -993,8 +999,10 @@ function genSlots() {
   return s;
 }
 function fakeTaken(ds) {
-  const seed = ds.split('-').reduce((a,b)=>a+parseInt(b),0);
-  return genSlots().filter((_,i)=>(seed+i*7)%5===0);
+  /* Slots ocupados = citas reales no canceladas en esa fecha */
+  return getStoredApts()
+    .filter(a => a.date === ds && a.status !== 'cancelled')
+    .map(a => a.time);
 }
 
 /* CALENDAR */
@@ -1135,14 +1143,7 @@ function lookupApt(){
   const email=document.getElementById('lookupEmail').value.trim().toLowerCase();
   const list=document.getElementById('myAptsList');
   if(!code&&!email){showToastClient('Ingresa tu código o correo','warning');return;}
-  let apts=getStoredApts();
-  if(!apts.length){
-    apts=[{code:'SBS-DEMO01',nombre:'Cliente Demo',email:'demo@correo.com',tel:'+57 300 000 0000',
-      svc:'Corte + Barba',price:42000,dur:'60 min',
-      date:new Date().toISOString().split('T')[0],
-      time:'10:00',status:'pending',createdAt:new Date().toISOString()}];
-    saveStoredApts(apts);
-  }
+  const apts=getStoredApts();
   const results=apts.filter(a=>(code&&a.code===code)||(email&&(a.email||'').toLowerCase()===email));
   if(!results.length){list.innerHTML='<div style="text-align:center;padding:40px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--tan)">No se encontraron citas</div>';return;}
   renderMyApts(results);
@@ -1150,7 +1151,7 @@ function lookupApt(){
 
 function renderMyApts(apts){
   const list=document.getElementById('myAptsList');
-  const sl={pending:'Pendiente',confirmed:'Confirmada',cancelled:'Cancelada',rescheduled:'Reagendada'};
+  const sl={pending:'Pendiente',confirmed:'Confirmada',cancelled:'Cancelada',rescheduled:'Reagendada',done:'Completada'};
   list.innerHTML=apts.map(a=>`
     <div class="my-apt-card">
       <div class="my-apt-head">
