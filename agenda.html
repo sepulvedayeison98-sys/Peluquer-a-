@@ -62,10 +62,101 @@ nav {
   color: var(--muted); text-decoration: none; transition: color 0.2s;
 }
 .nav-links a:hover { color: var(--gold); }
+/* ── MOBILE: 600px ── */
 @media(max-width:600px){
-  nav { padding: 0 20px; }
-  .nav-links { gap: 16px; }
-  .nav-links li:first-child { display: none; } /* oculta "Servicios" en móvil */
+  /* Nav */
+  nav{padding:0 20px;height:54px}
+  .nav-links{gap:14px}
+  .nav-links li:first-child{display:none}
+
+  /* Hero */
+  .hero{min-height:auto;padding-top:54px}
+  .hero-content{padding:48px 24px 48px 28px}
+  .hero-content::before{display:none}
+  .hero-sub{margin-bottom:28px}
+  .hero-cta{padding:12px 28px;font-size:9px}
+
+  /* Info strip */
+  .info-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px;
+              scrollbar-width:none;flex-shrink:0}
+  .info-strip::-webkit-scrollbar{display:none}
+  .info-item{flex-shrink:0;padding:0 14px;font-size:9px}
+
+  /* Section */
+  .section{padding:48px 20px}
+  .s-title{font-size:clamp(26px,7vw,40px);margin-bottom:36px}
+
+  /* Services */
+  .svc-row{grid-template-columns:28px 1fr auto;gap:10px;padding:18px 12px}
+  .svc-chip{display:none}
+  .svc-price{font-size:16px}
+  .svc-price small{font-size:8px}
+
+  /* Slots */
+  .slots-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:5px}
+  .t-slot{padding:9px 4px;font-size:10px}
+
+  /* Form */
+  .form-card{grid-template-columns:1fr}
+  .f-field{border-right:none!important}
+  .f-field.wide{border-right:none}
+
+  /* Summary */
+  .summary-card{grid-template-columns:1fr}
+  .sum-left{padding:20px 20px 16px}
+  .sum-right{padding:16px 20px 20px;border-left:none;border-top:1px solid var(--border);
+             align-items:flex-start}
+  .sum-total-amt{font-size:36px;text-align:left}
+  .sum-total-label{text-align:left}
+
+  /* Book button */
+  .book-btn{padding:16px 20px;font-size:10px}
+
+  /* Success */
+  .success{padding:48px 16px}
+  .conf-badge{padding:12px 24px;font-size:15px}
+
+  /* Footer */
+  footer{padding:36px 20px;flex-direction:column;align-items:flex-start;gap:20px}
+  .ft-info{text-align:left}
+
+  /* Mis citas */
+  .my-apt-body{grid-template-columns:1fr}
+  .my-apt-actions{flex-wrap:wrap}
+  .my-apt-btn{flex:1;text-align:center;padding:9px 10px}
+
+  /* Lookup */
+  .lookup-form{flex-direction:column;gap:8px}
+  .lookup-input{min-width:0;width:100%}
+  .lookup-btn{width:100%}
+
+  /* Modals */
+  .modal-backdrop{align-items:flex-end}
+  .modal-box{max-height:88vh;border-radius:0}
+  .modal-actions{flex-direction:column;gap:8px}
+  .modal-act-btn{flex:none;width:100%}
+  .rsch-grid{grid-template-columns:1fr}
+  .rsch-field.wide{grid-column:1}
+
+  /* Sticky bar */
+  .sticky-bar{padding:10px 20px;flex-direction:column;gap:6px;text-align:center}
+
+  /* Toast */
+  .toast{left:12px;right:12px;width:auto;transform:translateX(0) translateY(20px);white-space:normal;text-align:center}
+  .toast.show{transform:translateX(0) translateY(0)}
+}
+
+/* ── MOBILE: very small 380px ── */
+@media(max-width:380px){
+  .hero-title{font-size:44px}
+  .svc-row{grid-template-columns:22px 1fr;gap:8px}
+  .svc-price{font-size:14px}
+  .cal-body{padding:10px 10px 16px}
+  .c-cell{font-size:11px}
+  .section{padding:36px 16px}
+  nav{padding:0 14px}
+  .nav-links{gap:10px}
+  .nav-links a{font-size:9px;letter-spacing:.12em}
 }
 
 /* ── NOTIF ── */

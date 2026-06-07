@@ -385,6 +385,10 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 /* Body locked while login visible */
 body.locked{overflow:hidden}
 
+/* ── DASHBOARD LAYOUT ── */
+.dash-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;align-items:start}
+@media(max-width:900px){.dash-layout{grid-template-columns:1fr}}
+
 /* ── HORARIO LAYOUT (reemplaza inline style) ── */
 .horario-layout{
   display:grid;
@@ -399,31 +403,110 @@ body.locked{overflow:hidden}
   overflow-y:auto;
 }
 
-/* ── RESPONSIVE OVERRIDES ── */
+/* Fix: content overflow-x must not clip table scroll children */
+.content{overflow-x:visible!important}
+
+/* ── RESPONSIVE: tablet ── */
 @media(max-width:900px){
   .horario-layout{grid-template-columns:1fr}
   .horario-config-card{position:static;max-height:none;overflow-y:visible}
-}
-@media(max-width:700px){
-  .content{padding:16px 14px!important}
-  .topbar{padding:0 14px}
-  .topbar-date{display:none}
-  .kpi-grid{grid-template-columns:1fr 1fr!important}
-  .kpi-value{font-size:26px!important}
-  .ing-summary{grid-template-columns:1fr!important}
-  .ing-cell{border-right:none!important;border-bottom:1px solid var(--border)}
-  .nf-grid{grid-template-columns:1fr!important}
-  .rsch-grid{grid-template-columns:1fr!important}
-  .rsch-field.wide{grid-column:1!important}
-  .nf-field.wide{grid-column:1!important}
-  .modal{padding:24px 18px}
-  .modal-actions{flex-direction:column}
-  .modal-btn{flex:none;width:100%}
-  .view-tabs{flex-wrap:wrap}
+  #page-dashboard > div{grid-template-columns:1fr!important}
 }
 
-/* Fix: content overflow-x must not clip table scroll children */
-.content{overflow-x:visible!important}
+/* ── RESPONSIVE: mobile ── */
+@media(max-width:600px){
+  /* Topbar */
+  .topbar{padding:0 12px;height:52px}
+  .topbar-date{display:none}
+  .topbar-title{font-size:15px}
+  .topbar-btn{padding:7px 12px;font-size:9px;letter-spacing:.08em}
+
+  /* Content */
+  .content{padding:14px 12px!important}
+
+  /* KPI accordion */
+  .kpi-accordion-header{flex-direction:column;align-items:flex-start;gap:8px;padding:14px 16px}
+  .kpi-acc-summary{display:none}
+  .kpi-grid{grid-template-columns:1fr 1fr!important}
+  .kpi-card{padding:16px 14px;border-right:none;border-bottom:1px solid var(--border)}
+  .kpi-card:nth-child(odd){border-right:1px solid var(--border)!important}
+  .kpi-card:last-child{border-bottom:none!important}
+  .kpi-value{font-size:22px!important}
+  .kpi-sub,.kpi-trend{font-size:9px}
+
+  /* Card */
+  .card{margin-bottom:12px}
+  .card-head{padding:12px 14px;flex-wrap:wrap;gap:6px}
+  .card-head-title{font-size:13px}
+
+  /* View tabs */
+  .view-tabs{width:100%!important}
+  .v-tab{flex:1;padding:9px 4px;font-size:9px;letter-spacing:.05em;text-align:center}
+
+  /* Tables: ocultar columna "Servicio" (4ª) y "Fecha" en dash */
+  .apts-table td:nth-child(4),.apts-table th:nth-child(4){display:none}
+  .apts-table td,.apts-table th{padding:10px 10px}
+
+  /* Row actions: wrap */
+  .row-actions{flex-wrap:wrap;gap:4px}
+  .row-btn{padding:4px 8px;font-size:8px}
+
+  /* Horario config */
+  .horario-config{padding:14px 16px}
+  .dia-row{flex-wrap:wrap;gap:6px;padding:10px 0}
+  .dia-name{width:70px;font-size:12px}
+  .dia-hours{width:100%}
+  .dia-input{width:64px;font-size:11px;padding:5px 8px}
+
+  /* Ingresos KPI: 1 columna en móvil */
+  .ing-kpi{grid-template-columns:1fr!important}
+  .ing-kpi .kpi-card{border-right:none;border-bottom:1px solid var(--border)}
+  .ing-kpi .kpi-card:last-child{border-bottom:none}
+  .bar-chart{padding:16px}
+  .bar-label{width:40px;font-size:9px}
+  .bar-val{width:48px;font-size:9px}
+  .svc-rank-list{padding:0 14px 14px}
+  .svc-rank-count{display:none}
+
+  /* Modal */
+  .modal{padding:20px 16px;max-height:96vh;border-radius:0}
+  .modal-overlay{align-items:flex-end}
+  .modal-title{font-size:18px;margin-bottom:16px}
+  .modal-actions{flex-direction:column;gap:8px}
+  .modal-btn{width:100%}
+  .nf-grid{grid-template-columns:1fr}
+  .nf-field.wide{grid-column:1}
+  .rsch-grid{grid-template-columns:1fr}
+  .rsch-field.wide{grid-column:1}
+
+  /* Toast */
+  .admin-toast{right:10px;left:10px;max-width:none;bottom:14px;text-align:center}
+
+  /* Notif preview tabs */
+  .notif-tab-row{flex-wrap:wrap;gap:0}
+  .notif-tab{flex:1 1 50%;text-align:center;font-size:8px;padding:5px 4px}
+  .notif-tab:last-child{border-left:1px solid var(--border)}
+
+  /* Login box */
+  .login-box{padding:28px 20px}
+  .login-logo-main{font-size:26px}
+
+  /* Sidebar wider touch targets */
+  .sb-link{padding:14px 24px;font-size:14px}
+
+  /* Mini calendar in dashboard */
+  .mini-cal-wrap{padding:0 12px 14px}
+}
+
+/* ── RESPONSIVE: very small (360px) ── */
+@media(max-width:380px){
+  .topbar-btn{padding:6px 8px;font-size:8px}
+  .v-tab{padding:8px 2px;font-size:8px;letter-spacing:0}
+  .kpi-value{font-size:20px!important}
+  .apts-table td:nth-child(6),.apts-table th:nth-child(6){display:none} /* oculta precio en tabla */
+  .dia-input{width:58px}
+  .modal{padding:16px 12px}
+}
 
 </style>
 </head>
@@ -555,7 +638,7 @@ body.locked{overflow:hidden}
     </div>
 
     <!-- CITAS + CALENDARIO LADO A LADO -->
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;align-items:start">
+    <div class="dash-layout">
 
       <!-- CITAS DEL DÍA — PRINCIPAL -->
       <div class="card">
@@ -655,7 +738,7 @@ body.locked{overflow:hidden}
       <div class="v-tab" onclick="switchIngPeriod('mes',this)">Mes</div>
       <div class="v-tab" onclick="switchIngPeriod('year',this)">Año</div>
     </div>
-    <div class="kpi-grid" style="margin-bottom:20px;border:1px solid var(--border);background:var(--white);">
+    <div class="kpi-grid ing-kpi" style="margin-bottom:20px;border:1px solid var(--border);background:var(--white);">
       <div class="kpi-card highlight">
         <div class="kpi-label">Total período</div>
         <div class="kpi-value" id="ingTotal">$486K</div>
