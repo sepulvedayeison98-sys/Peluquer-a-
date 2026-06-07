@@ -1219,6 +1219,7 @@ document.getElementById('reschedBarberModal').addEventListener('click',e=>{
   if(e.target===e.currentTarget) closeReschedBarber();
 });
 
+
 /* ── NOTIFICATION SYSTEM (ADMIN) ── */
 function sendAdminNotif(payload){
   const APPS_SCRIPT_URL='https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
@@ -1345,7 +1346,7 @@ function attemptLogin() {
 function showLoginError(msg) {
   const el = document.getElementById('loginError');
   el.textContent = msg;
-  el.classList.add('show');
+  el.style.display = 'block';
 }
 
 function logout() {
@@ -1353,13 +1354,12 @@ function logout() {
   location.reload();
 }
 
-// Check on load
-document.addEventListener('DOMContentLoaded', checkSession);
-
-/* ── INIT ── */
-renderDashTable();
-renderMiniCal();
-renderIngresos();
+document.addEventListener('DOMContentLoaded', function() {
+  checkSession();
+  renderDashTable();
+  renderMiniCal();
+  renderIngresos();
+});
 </script>
 
 </body>
