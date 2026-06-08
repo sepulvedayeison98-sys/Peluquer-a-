@@ -1241,7 +1241,7 @@ function cancelByBarber(id){
   if(!confirm(`¿Cancelar la cita de ${a.name}? Se notificará al cliente.`)) return;
   a.status='cancelled'; persistApts();
   backendPost({ action:'cancel', code:a.code });
-  notifyN8N('cancel', a); → correo
+  notifyN8N('cancel', a);
   closeModal(); renderDashTable(); renderMiniCal();
   showAdminToast(`Cita de ${a.name} cancelada. Cliente notificado.`, 'warning');
 }
