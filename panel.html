@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Status Barber Studio — Panel del Barbero</title>
+<title>Barber Style — Panel del Barbero</title>
+<meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Jost:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -543,7 +544,7 @@ body.locked{overflow:hidden}
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
-    <div class="sb-brand-name">Status <em>Barber</em></div>
+    <div class="sb-brand-name">Barber <em>Style</em></div>
     <div class="sb-brand-sub">Panel del barbero</div>
   </div>
   <nav class="sb-nav">
@@ -594,15 +595,15 @@ body.locked{overflow:hidden}
   <!-- ═══ DASHBOARD ═══ -->
   <div class="content active" id="page-dashboard">
 
-    <!-- KPI ACCORDION -->
+    <!-- KPI ACCORDION (valores calculados desde citas reales) -->
     <div class="kpi-accordion" id="kpiAccordion">
       <div class="kpi-accordion-header" onclick="toggleKpi()">
         <div class="kpi-acc-left">
           <div class="kpi-acc-title">Métricas <em>del negocio</em></div>
           <div class="kpi-acc-summary">
-            <span class="kpi-acc-pill">Hoy <strong>$126K</strong></span>
-            <span class="kpi-acc-pill">Semana <strong>18 citas</strong></span>
-            <span class="kpi-acc-pill">Mes <strong>$1.8M</strong></span>
+            <span class="kpi-acc-pill">Hoy <strong id="kpiPillHoy">—</strong></span>
+            <span class="kpi-acc-pill">Semana <strong id="kpiPillSemana">—</strong></span>
+            <span class="kpi-acc-pill">Mes <strong id="kpiPillMes">—</strong></span>
           </div>
         </div>
         <span class="kpi-acc-arrow">▾</span>
@@ -611,27 +612,23 @@ body.locked{overflow:hidden}
         <div class="kpi-grid">
           <div class="kpi-card highlight">
             <div class="kpi-label">Ingresos hoy</div>
-            <div class="kpi-value">$126K</div>
-            <div class="kpi-sub">3 citas completadas</div>
-            <div class="kpi-trend up">↑ 18% vs ayer</div>
+            <div class="kpi-value" id="kpiIngHoy">—</div>
+            <div class="kpi-sub" id="kpiSubHoy">— citas</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Citas esta semana</div>
-            <div class="kpi-value">18</div>
-            <div class="kpi-sub">2 pendientes de confirmar</div>
-            <div class="kpi-trend up">↑ 4 vs semana pasada</div>
+            <div class="kpi-value" id="kpiCitasSemana">—</div>
+            <div class="kpi-sub" id="kpiSubSemana">—</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Ingresos del mes</div>
-            <div class="kpi-value">$1.8M</div>
-            <div class="kpi-sub">47 citas en junio</div>
-            <div class="kpi-trend up">↑ 12% vs mayo</div>
+            <div class="kpi-value" id="kpiIngMes">—</div>
+            <div class="kpi-sub" id="kpiSubMes">— citas en el mes</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Confirmación</div>
-            <div class="kpi-value">94%</div>
-            <div class="kpi-sub">Solo 3 cancelaciones</div>
-            <div class="kpi-trend down">↓ 2% vs mes anterior</div>
+            <div class="kpi-label">Tasa de confirmación</div>
+            <div class="kpi-value" id="kpiConfRate">—</div>
+            <div class="kpi-sub" id="kpiSubConf">Últimos 30 días</div>
           </div>
         </div>
       </div>
@@ -908,6 +905,67 @@ function toggleKpi(){
   document.getElementById('kpiAccordion').classList.toggle('open');
 }
 
+/* ── KPIs dinámicos ── */
+function renderKPIs(){
+  const apts = appointments; // ya cargados en memoria
+  const now  = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+
+  // Inicio de semana (lunes)
+  const dow = (now.getDay()+6)%7; // 0=lun … 6=dom
+  const weekStart = new Date(now); weekStart.setDate(now.getDate()-dow);
+  weekStart.setHours(0,0,0,0);
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+7);
+
+  // Inicio de mes
+  const monthStr = todayStr.slice(0,7); // "YYYY-MM"
+
+  const active = a => a.status !== 'cancelled';
+  const done30 = a => {
+    const d = new Date(a.date);
+    const cutoff = new Date(now); cutoff.setDate(now.getDate()-30);
+    return d >= cutoff && d <= now;
+  };
+
+  // HOY
+  const hoy = apts.filter(a=>a.date===todayStr && active(a));
+  const ingHoy = hoy.filter(a=>a.status==='done').reduce((s,a)=>s+(+a.price||0),0);
+  const hoyDone = hoy.filter(a=>a.status==='done').length;
+
+  // SEMANA
+  const semana = apts.filter(a=>{
+    const d=new Date(a.date+'T12:00:00');
+    return d>=weekStart && d<weekEnd && active(a);
+  });
+  const pendSemana = semana.filter(a=>a.status==='pending').length;
+
+  // MES
+  const mes = apts.filter(a=>a.date.startsWith(monthStr) && active(a));
+  const ingMes = mes.filter(a=>a.status==='done').reduce((s,a)=>s+(+a.price||0),0);
+
+  // TASA CONFIRMACIÓN (últimos 30 días)
+  const rec = apts.filter(done30);
+  const conf = rec.length ? Math.round(rec.filter(a=>['confirmed','done'].includes(a.status)).length/rec.length*100) : 0;
+
+  // Formateador COP compacto
+  const cop = v => v===0 ? '$0' : v>=1000000 ? `$${(v/1000000).toFixed(1).replace('.0','')}M` : `$${Math.round(v/1000)}K`;
+
+  // Pills del acordeón
+  document.getElementById('kpiPillHoy').textContent    = cop(ingHoy);
+  document.getElementById('kpiPillSemana').textContent = semana.length + ' citas';
+  document.getElementById('kpiPillMes').textContent    = cop(ingMes);
+
+  // Cards
+  document.getElementById('kpiIngHoy').textContent     = cop(ingHoy);
+  document.getElementById('kpiSubHoy').textContent     = hoyDone + ' cita' + (hoyDone!==1?'s':'') + ' completada' + (hoyDone!==1?'s':'');
+  document.getElementById('kpiCitasSemana').textContent= semana.length;
+  document.getElementById('kpiSubSemana').textContent  = pendSemana ? pendSemana+' pendiente'+(pendSemana!==1?'s':'') : 'Todo confirmado';
+  document.getElementById('kpiIngMes').textContent     = cop(ingMes);
+  document.getElementById('kpiSubMes').textContent     = mes.length + ' cita' + (mes.length!==1?'s':'') + ' en el mes';
+  document.getElementById('kpiConfRate').textContent   = conf + '%';
+  document.getElementById('kpiSubConf').textContent    = rec.length ? rec.length+' citas en 30 días' : 'Sin datos aún';
+}
+
 /* ── NAV ── */
 function showPage(id,el){
   document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
@@ -916,6 +974,7 @@ function showPage(id,el){
   if(el) el.classList.add('active');
   const titles={dashboard:'Dashboard',citas:'Citas',horario:'Horario',ingresos:'Ingresos'};
   document.getElementById('topbarTitle').textContent=titles[id]||id;
+  if(id==='dashboard') renderKPIs();
   if(id==='citas')    renderCitasTable();
   if(id==='horario')  renderHorario();
   if(id==='ingresos') renderIngresos();
@@ -967,13 +1026,12 @@ function renderMiniCal(){
     const cd=new Date(y,m,d);
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     el.className='mc-cell in'; el.textContent=d;
-    if(cd<TODAY){el.classList.add('past');}
-    else{
-      if(ds===todayStr) el.classList.add('now');
-      if(appointments.some(a=>a.date===ds&&a.status!=='cancelled')) el.classList.add('has-apts');
-      if(ds===selectedDayStr) el.classList.add('sel');
-      el.addEventListener('click',()=>selectDay(ds));
-    }
+    // 🐛 fix: fechas pasadas también son clickeables (historial)
+    if(appointments.some(a=>a.date===ds)) el.classList.add('has-apts');
+    if(ds===todayStr) el.classList.add('now');
+    if(ds===selectedDayStr) el.classList.add('sel');
+    if(cd<TODAY) el.classList.add('past'); // estilo visual pero no bloquea click
+    el.addEventListener('click',()=>selectDay(ds));
     g.appendChild(el);
   }
   renderDayPanel(selectedDayStr);
@@ -1103,7 +1161,8 @@ function switchNotifTab(el, targetId){
   parent.querySelectorAll('.notif-tab').forEach(t=>t.classList.remove('active'));
   parent.querySelectorAll('.notif-panel').forEach(p=>p.classList.remove('show'));
   el.classList.add('active');
-  const panel = document.getElementById(targetId);
+  // 🐛 fix: buscar dentro del parent, no globalmente con getElementById
+  const panel = parent.querySelector('#'+targetId);
   if(panel) panel.classList.add('show');
 }
 
@@ -1114,7 +1173,7 @@ function cancelByBarber(id){
   a.status='cancelled';persistApts();
   sendAdminNotif({trigger:'cancel_by_barber', apt:a,
     toClient:{email: a.email||'cliente@demo.com', tel:a.tel},
-    toBarber:{email:'barbero@statusbarberstudio.com', tel:'+573001234567'}
+    toBarber:{email:'barbero@barberstyle.co', tel:'+573001234567'}
   });
   closeModal(); renderDashTable(); renderMiniCal();
   showAdminToast(`Cita de ${a.name} cancelada. Cliente notificado.`, 'warning');
@@ -1124,10 +1183,11 @@ function cancelByBarber(id){
 function changeStatusNotify(id, newStatus){
   const a = appointments.find(x=>x.id===id); if(!a) return;
   a.status = newStatus;
+  persistApts(); // 🐛 fix: persistir antes de notificar
   if(newStatus==='confirmed'){
     sendAdminNotif({trigger:'confirm_by_barber', apt:a,
       toClient:{email:a.email||'cliente@demo.com',tel:a.tel},
-      toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}
+      toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}
     });
     showAdminToast(`Cita de ${a.name} confirmada. Cliente notificado.`, 'success');
   }
@@ -1346,8 +1406,9 @@ function openReschedBarber(id){
   document.getElementById('bRschMotivo').value='';
   document.getElementById('reschedNotifPreview').innerHTML='';
 
-  document.getElementById('bRschFecha').addEventListener('change', updateRschedPreview);
-  document.getElementById('bRschHora').addEventListener('change', updateRschedPreview);
+  // 🐛 fix: usar onchange inline para evitar acumulación de listeners en cada apertura
+  document.getElementById('bRschFecha').onchange = updateRschedPreview;
+  document.getElementById('bRschHora').onchange  = updateRschedPreview;
 
   document.getElementById('reschedBarberModal').classList.add('open');
 }
@@ -1374,7 +1435,7 @@ function confirmReschedBarber(){
 
   sendAdminNotif({trigger:'reschedule_by_barber', apt:a, oldDate, oldTime,
     toClient:{email:a.email||'cliente@demo.com',tel:a.tel},
-    toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}
+    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}
   });
 
   closeReschedBarber();
@@ -1410,21 +1471,21 @@ function buildAdminMessages(trigger, a, oldDate, oldTime){
   const oldFd=oldDate?fmtDisplay(oldDate):'';
   const templates={
     cancel_by_barber:{
-      emailClient:{subject:`Tu cita fue cancelada — ${a.id}`,body:`Hola ${a.name},\n\nLamentamos informarte que tu cita fue cancelada por el barbero.\n\nServicio: ${a.svc}\nFecha: ${fd} ${a.time}\n\nEscríbenos para reagendar.\n\n— Status Barber Studio`},
+      emailClient:{subject:`Tu cita fue cancelada — ${a.id}`,body:`Hola ${a.name},\n\nLamentamos informarte que tu cita fue cancelada por el barbero.\n\nServicio: ${a.svc}\nFecha: ${fd} ${a.time}\n\nEscríbenos para reagendar.\n\n— Barber Style`},
       emailBarber:{subject:`Cita cancelada — ${a.name}`,body:`Cancelaste la cita de ${a.name}\nFecha: ${fd} ${a.time}\nServicio: ${a.svc}`},
-      waClient:`⚠️ *Status Barber Studio*\n\nHola ${a.name}, lamentamos que tu cita fue cancelada por el barbero.\n\n📅 ${fd} · ${a.time}\n💈 ${a.svc}\n\nPor favor escríbenos para reagendar. 🙏`,
+      waClient:`⚠️ *Barber Style*\n\nHola ${a.name}, lamentamos que tu cita fue cancelada por el barbero.\n\n📅 ${fd} · ${a.time}\n💈 ${a.svc}\n\nPor favor escríbenos para reagendar. 🙏`,
       waBarber:`✅ Cita de *${a.name}* cancelada. Se notificó al cliente.`
     },
     confirm_by_barber:{
-      emailClient:{subject:`Cita confirmada — Status Barber`,body:`Hola ${a.name},\n\nTu cita fue confirmada.\n\nServicio: ${a.svc}\nFecha: ${fd} ${a.time}\n\nTe esperamos. ✂️\n\n— Status Barber Studio`},
+      emailClient:{subject:`Cita confirmada — Barber Style`,body:`Hola ${a.name},\n\nTu cita fue confirmada.\n\nServicio: ${a.svc}\nFecha: ${fd} ${a.time}\n\nTe esperamos. ✂️\n\n— Barber Style`},
       emailBarber:{subject:`Cita confirmada — ${a.name}`,body:`Confirmaste la cita de ${a.name}\nFecha: ${fd} ${a.time}`},
-      waClient:`✅ *Status Barber Studio*\n\nHola ${a.name}, tu cita está *confirmada*.\n\n📅 ${fd} · ${a.time}\n💈 ${a.svc}\n\n¡Te esperamos! ✂️`,
+      waClient:`✅ *Barber Style*\n\nHola ${a.name}, tu cita está *confirmada*.\n\n📅 ${fd} · ${a.time}\n💈 ${a.svc}\n\n¡Te esperamos! ✂️`,
       waBarber:`✅ Cita de *${a.name}* confirmada para ${fd} ${a.time}.`
     },
     reschedule_by_barber:{
-      emailClient:{subject:`Tu cita fue reagendada — Status Barber`,body:`Hola ${a.name},\n\nEl barbero reagendó tu cita.\n\nFecha anterior: ${oldFd} ${oldTime}\nNueva fecha: ${fd} ${a.time}\nServicio: ${a.svc}\n\nSi no puedes, escríbenos.\n\n— Status Barber Studio`},
+      emailClient:{subject:`Tu cita fue reagendada — Barber Style`,body:`Hola ${a.name},\n\nEl barbero reagendó tu cita.\n\nFecha anterior: ${oldFd} ${oldTime}\nNueva fecha: ${fd} ${a.time}\nServicio: ${a.svc}\n\nSi no puedes, escríbenos.\n\n— Barber Style`},
       emailBarber:{subject:`Cita reagendada — ${a.name}`,body:`Reagendaste la cita de ${a.name}\nDe: ${oldFd} ${oldTime}\nA: ${fd} ${a.time}`},
-      waClient:`📅 *Status Barber Studio*\n\nHola ${a.name}, el barbero reagendó tu cita.\n\n🔄 De: ${oldFd} ${oldTime}\n✅ A: *${fd} ${a.time}*\n💈 ${a.svc}\n\nSi tienes dudas escríbenos. ✂️`,
+      waClient:`📅 *Barber Style*\n\nHola ${a.name}, el barbero reagendó tu cita.\n\n🔄 De: ${oldFd} ${oldTime}\n✅ A: *${fd} ${a.time}*\n💈 ${a.svc}\n\nSi tienes dudas escríbenos. ✂️`,
       waBarber:`✅ Reagendamiento de *${a.name}* confirmado. Cliente notificado.`
     }
   };
@@ -1444,9 +1505,8 @@ function showAdminToast(msg, type=''){
    Cambia USER y PASS antes de subir a GitHub
 ══════════════════════════════════════ */
 const AUTH = {
-  // ⚠️ CAMBIA ESTOS VALORES ANTES DE PUBLICAR
-  USER: 'statusbarber',
-  PASS: 'studio2023',
+  USER: 'barberstyle',
+  PASS: 'bs2025*',
   MAX_ATTEMPTS: 5,
   LOCKOUT_MINUTES: 15,
   SESSION_KEY: 'sbs_admin_session'
@@ -1500,13 +1560,15 @@ function attemptLogin() {
         `${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''}`;
     }
 
-    // Shake animation
+    // Shake animation (transition set BEFORE transform)
     const box = document.querySelector('.login-box');
-    box.style.transform = 'translateX(-8px)';
-    setTimeout(() => box.style.transition = 'transform .1s', 0);
-    setTimeout(() => box.style.transform = 'translateX(8px)', 100);
-    setTimeout(() => box.style.transform = 'translateX(0)', 200);
-    setTimeout(() => box.style.transition = '', 300);
+    box.style.transition = 'transform .08s ease-in-out';
+    setTimeout(() => { box.style.transform = 'translateX(-10px)'; }, 0);
+    setTimeout(() => { box.style.transform = 'translateX(10px)'; },  80);
+    setTimeout(() => { box.style.transform = 'translateX(-6px)'; },  160);
+    setTimeout(() => { box.style.transform = 'translateX(6px)'; },   240);
+    setTimeout(() => { box.style.transform = 'translateX(0)'; },     320);
+    setTimeout(() => { box.style.transition = ''; },                 400);
 
     document.getElementById('loginPass').value = '';
     document.getElementById('loginPass').focus();
@@ -1528,6 +1590,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkSession();
   renderDashTable();
   renderMiniCal();
+  renderKPIs();
   renderIngresos();
 });
 </script>

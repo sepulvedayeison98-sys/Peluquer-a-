@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página no encontrada — Barber Style</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0a0806;color:#fff;
+  font-family:'DM Mono',monospace;
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:40px 24px;
+}
+body::after{
+  content:'';position:fixed;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(to right,transparent,#c9a96e,transparent);
+}
+.code{
+  font-size:clamp(80px,20vw,140px);
+  font-family:'Playfair Display',serif;
+  font-weight:700;color:transparent;
+  -webkit-text-stroke:1px rgba(201,169,110,.3);
+  line-height:1;margin-bottom:24px;
+}
+h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(22px,5vw,32px);
+  font-weight:500;color:#fff;margin-bottom:10px;
+}
+h1 em{font-style:italic;color:#c9a96e;font-weight:400}
+p{font-size:10px;letter-spacing:.25em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);line-height:1.8;margin-bottom:36px}
+a{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:12px 32px;background:#c9a96e;color:#0a0806;
+  font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  text-decoration:none;font-weight:500;
+  transition:background .2s;
+}
+a:hover{background:#a8854d}
+a::after{content:'→';transition:transform .2s}
+a:hover::after{transform:translateX(4px)}
+</style>
+</head>
+<body>
+  <div class="code">404</div>
+  <h1>Página <em>no encontrada</em></h1>
+  <p>La URL que buscas no existe o fue movida.<br>Vuelve al inicio.</p>
+  <a href="/">Volver al inicio</a>
+</body>
+</html>

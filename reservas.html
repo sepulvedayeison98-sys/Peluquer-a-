@@ -1191,11 +1191,11 @@ document.getElementById('bookBtn').addEventListener('click',()=>{
   const notas=document.getElementById('fNotas').value.trim();
   if(!nombre){notify('Ingresa tu nombre para continuar');return;}
   const code='SBS-'+Math.random().toString(36).substr(2,6).toUpperCase();
-  const apt={code,nombre,email,tel,notas,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',createdAt:new Date().toISOString()};
+  const apt={code,name:nombre,email,tel,notes:notas,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',createdAt:new Date().toISOString()};
   const apts=getStoredApts(); apts.push(apt); saveStoredApts(apts);
   sendNotification({trigger:'new_booking',
     apt:{code,name:nombre,email,tel,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',notes:notas},
-    toClient:{email,tel},toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+    toClient:{email,tel},toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
   document.getElementById('confCode').textContent=code;
   document.getElementById('bookingForm').style.display='none';
   document.getElementById('successScreen').classList.add('show');
@@ -1255,10 +1255,10 @@ function renderMyApts(apts){
         <div class="my-apt-field"><div class="my-apt-lbl">Hora</div><div class="my-apt-val">${a.time} · ${a.dur}</div></div>
         <div class="my-apt-field"><div class="my-apt-lbl">Total</div><div class="my-apt-val" style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">$${Number(a.price).toLocaleString('es-CO')}</div></div>
       </div>
-      ${a.status!=='cancelled'?`<div class="my-apt-actions">
+      ${(a.status==='pending'||a.status==='confirmed'||a.status==='rescheduled')?`<div class="my-apt-actions">
         <button class="my-apt-btn" onclick="openReschedClient('${a.code}')">Reagendar</button>
         <button class="my-apt-btn danger" onclick="openCancelClient('${a.code}')">Cancelar cita</button>
-      </div>`:`<div style="padding:0 20px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--tan)">Cita cancelada</div>`}
+      </div>`:a.status==='done'?`<div style="padding:0 20px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--tan)">Cita completada</div>`:`<div style="padding:0 20px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--tan)">Cita cancelada</div>`}
     </div>`).join('');
 }
 
@@ -1279,9 +1279,9 @@ function confirmCancelClient(){
   a.status='cancelled'; saveStoredApts(apts);
   closeClientModal('cancelModal');
   sendNotification({trigger:'cancel_by_client',
-    apt:{code:a.code,name:a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:a.date,time:a.time,status:'cancelled'},
+    apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:a.date,time:a.time,status:'cancelled'},
     toClient:{email:a.email,tel:a.tel},
-    toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
   showToastClient('Cita cancelada. Se notificó al barbero.','warning');
   lookupApt();
 }
@@ -1308,15 +1308,18 @@ function confirmReschedClient(){
   if(!newDate||!newTime){showToastClient('Selecciona fecha y hora','warning');return;}
   const apts=getStoredApts();
   const a=apts.find(x=>x.code===activeAptCode); if(!a) return;
+  // Validar conflicto: otra cita activa mismo slot
+  const conflict=apts.find(x=>x.code!==activeAptCode&&x.date===newDate&&x.time===newTime&&x.status!=='cancelled');
+  if(conflict){showToastClient('Ese horario ya está ocupado. Elige otro.','warning');return;}
   const oldDate=a.date, oldTime=a.time;
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;
   saveStoredApts(apts);
   closeClientModal('reschedModal');
   sendNotification({trigger:'reschedule_by_client',
-    apt:{code:a.code,name:a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:newDate,time:newTime,status:'rescheduled'},
+    apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:newDate,time:newTime,status:'rescheduled'},
     oldDate,oldTime,
     toClient:{email:a.email,tel:a.tel},
-    toBarber:{email:'barbero@statusbarberstudio.com',tel:'+573001234567'}});
+    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
   showToastClient('Solicitud de reagendamiento enviada.','success');
   lookupApt();
 }
