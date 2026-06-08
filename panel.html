@@ -683,10 +683,10 @@ body.locked{overflow:hidden}
   <!-- ═══ CITAS ═══ -->
   <div class="content" id="page-citas">
     <div class="view-tabs" id="citasTabs">
-      <div class="v-tab active" onclick="filterCitas('hoy',this)">Hoy</div>
+      <div class="v-tab" onclick="filterCitas('hoy',this)">Hoy</div>
       <div class="v-tab" onclick="filterCitas('semana',this)">Semana</div>
       <div class="v-tab" onclick="filterCitas('mes',this)">Mes</div>
-      <div class="v-tab" onclick="filterCitas('todas',this)">Todas</div>
+      <div class="v-tab active" onclick="filterCitas('todas',this)">Todas</div>
     </div>
     <div class="card">
       <div class="card-head">
@@ -891,7 +891,7 @@ function refreshApts(){
   appointments = loadApts();
   aptIdSeq = appointments.reduce((m,a)=>Math.max(m,a.id),0)+1;
 }
-let currentFilter='hoy';
+let currentFilter='todas';
 let currentIngPeriod='semana';
 let miniCalVD=new Date(TODAY);
 let selectedDayStr=todayStr;
@@ -909,7 +909,7 @@ function renderKPIs(){
   refreshApts();
   const apts = appointments;
   const now  = new Date();
-  const todayStr = now.toISOString().slice(0,10);
+  const todayStr = fmtDate(now); // hora local, no UTC
 
   // Inicio de semana (lunes)
   const dow = (now.getDay()+6)%7; // 0=lun … 6=dom
@@ -1111,6 +1111,7 @@ function renderCitasTable(){
 
 /* ── STATUS ── */
 function changeStatus(id,newStatus){
+  refreshApts(); // asegura tener las citas más recientes antes de modificar
   const a=appointments.find(x=>x.id===id);
   if(a){a.status=newStatus;persistApts();renderDashTable();renderMiniCal();}
 }
@@ -1184,6 +1185,7 @@ function cancelByBarber(id){
 
 /* Change status with confirmation notification */
 function changeStatusNotify(id, newStatus){
+  refreshApts(); // asegura tener las citas más recientes antes de modificar
   const a = appointments.find(x=>x.id===id); if(!a) return;
   a.status = newStatus;
   persistApts(); // 🐛 fix: persistir antes de notificar
@@ -1597,6 +1599,20 @@ document.addEventListener('DOMContentLoaded', function() {
   renderMiniCal();
   renderKPIs();
   renderIngresos();
+});
+
+// Sincronización en tiempo real: si el cliente agenda desde otra pestaña,
+// el panel se actualiza automáticamente sin recargar la página
+window.addEventListener('storage', function(e){
+  if(e.key !== SBS_KEY) return;
+  refreshApts();
+  renderDashTable();
+  renderMiniCal();
+  renderKPIs();
+  // Si la pestaña Citas está activa, actualizar también
+  if(document.getElementById('page-citas').classList.contains('active')){
+    renderCitasTable();
+  }
 });
 </script>
 
