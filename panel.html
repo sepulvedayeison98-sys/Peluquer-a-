@@ -859,17 +859,7 @@ function fmtDisplay(ds){const[y,m,d]=ds.split('-');return `${d} de ${MONTHS[pars
 
 /* ── BACKEND (Google Apps Script) ── */
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
-const N8N_WEBHOOK = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
-
-async function notifyN8N(action, apt, extra) {
-  try {
-    await fetch(N8N_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, apt, ...extra })
-    });
-  } catch(e) { console.warn('N8N error:', e.message); }
-}
+// Los correos son enviados directamente por Apps Script (MailApp)
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null;
@@ -1243,7 +1233,6 @@ function cancelByBarber(id){
   if(!confirm(`¿Cancelar la cita de ${a.name}? Se notificará al cliente.`)) return;
   a.status='cancelled'; persistApts();
   backendPost({ action:'cancel', code:a.code });
-  notifyN8N('cancel', a);
   closeModal(); renderDashTable(); renderMiniCal();
   showAdminToast(`Cita de ${a.name} cancelada. Cliente notificado.`, 'warning');
 }
@@ -1255,7 +1244,6 @@ function changeStatusNotify(id, newStatus){
   a.status = newStatus;
   persistApts();
   backendPost({ action:'updateStatus', code:a.code, status:newStatus });
-  notifyN8N('updateStatus', a, { status: newStatus });
   if(newStatus==='confirmed'){
     showAdminToast(`Cita de ${a.name} confirmada. Cliente notificado.`, 'success');
   }
@@ -1505,7 +1493,6 @@ function confirmReschedBarber(){
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;persistApts();
 
   backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime });
-  notifyN8N('reschedule', a, { date: newDate, time: newTime });
 
   closeReschedBarber();
   renderDashTable(); renderMiniCal();
