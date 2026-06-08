@@ -641,7 +641,10 @@ body.locked{overflow:hidden}
       <div class="card">
         <div class="card-head">
           <div class="card-head-title" id="dashCitasTitle">Citas de <em>hoy</em></div>
-          <button class="card-action" onclick="showPage('citas',document.querySelectorAll('.sb-link')[1])">Ver todas →</button>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="card-action" id="syncBtn" onclick="manualSync()" title="Actualizar desde servidor">⟳ Actualizar</button>
+            <button class="card-action" onclick="showPage('citas',document.querySelectorAll('.sb-link')[1])">Ver todas →</button>
+          </div>
         </div>
         <div class="table-scroll"><table class="apts-table">
           <thead>
@@ -856,7 +859,7 @@ function fmtDisplay(ds){const[y,m,d]=ds.split('-');return `${d} de ${MONTHS[pars
 
 /* ── BACKEND (Google Apps Script) ── */
 // Pega aquí la URL después de desplegar el script
-const BACKEND_URL = '';  // ej: 'https://script.google.com/macros/s/ABC123.../exec'
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null;
@@ -873,13 +876,20 @@ async function backendPost(payload) {
   }
 }
 
+async function manualSync() {
+  const btn = document.getElementById('syncBtn');
+  if (btn) { btn.textContent = '⟳ Sincronizando…'; btn.disabled = true; }
+  await syncFromBackend();
+  if (btn) { btn.textContent = '⟳ Actualizar'; btn.disabled = false; }
+}
+
 async function syncFromBackend() {
   if (!BACKEND_URL) return;
   try {
     const res = await fetch(`${BACKEND_URL}?action=getAll`);
     const json = await res.json();
-    if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
-      // Fusionar: backend tiene la verdad, pero guardar en localStorage también
+    if (json.ok && Array.isArray(json.data)) {
+      // Backend es la fuente de verdad — reemplazar localStorage completamente
       localStorage.setItem(SBS_KEY, JSON.stringify(json.data));
       refreshApts();
       renderDashTable();
@@ -1646,6 +1656,9 @@ document.addEventListener('DOMContentLoaded', function() {
   renderIngresos();
   // Sincronizar desde Google Sheets al cargar (si el backend está configurado)
   syncFromBackend();
+
+  // Auto-refresh cada 30 segundos para capturar citas agendadas desde otros dispositivos
+  setInterval(syncFromBackend, 30000);
 });
 
 // Sincronización en tiempo real: si el cliente agenda desde otra pestaña,

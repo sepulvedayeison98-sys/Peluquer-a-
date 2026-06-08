@@ -1080,7 +1080,7 @@ const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
 // ── BACKEND (Google Apps Script) ──────────────────────────────────
 // Pega aquí la URL después de desplegar el script en Google Apps Script
-const BACKEND_URL = '';  // ej: 'https://script.google.com/macros/s/ABC123.../exec'
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null; // sin backend configurado, solo localStorage
@@ -1122,11 +1122,36 @@ function genSlots() {
   }
   return s;
 }
-function fakeTaken(ds) {
-  /* Slots ocupados = citas reales no canceladas en esa fecha */
-  return getStoredApts()
-    .filter(a => a.date === ds && a.status !== 'cancelled')
-    .map(a => a.time);
+
+function parseMins(durStr) {
+  const m = parseInt(durStr);
+  return isNaN(m) ? 30 : m;
+}
+function timeToMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+function minsToTime(m) {
+  return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+}
+
+/* Devuelve Set de slots NO disponibles para un nuevo turno de newDurMins */
+function getUnavailableSlots(apts, newDurMins) {
+  const unavailable = new Set();
+  apts.forEach(a => {
+    const existStart = timeToMins(a.time);
+    const existEnd   = existStart + parseMins(a.dur || '30 min');
+    genSlots().forEach(s => {
+      const t = timeToMins(s);
+      // El nuevo turno [t, t+newDur) se superpone con [existStart, existEnd)?
+      if (t < existEnd && t + newDurMins > existStart) unavailable.add(s);
+    });
+  });
+  // Bloquear slots donde el servicio pasaría de las 19:00
+  genSlots().forEach(s => {
+    if (timeToMins(s) + newDurMins > 19 * 60) unavailable.add(s);
+  });
+  return unavailable;
 }
 
 /* CALENDAR */
@@ -1159,13 +1184,28 @@ function pickDate(ds,el) {
   drawSlots(ds); sync();
 }
 
-function drawSlots(ds) {
+async function drawSlots(ds) {
   const w = document.getElementById('slotsWrap'), g = document.getElementById('slotsGrid');
-  w.style.display='block'; g.innerHTML='';
-  const taken = fakeTaken(ds);
+  w.style.display='block';
+  g.innerHTML='<div style="text-align:center;padding:24px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--tan)">Cargando disponibilidad…</div>';
+
+  // Obtener citas del backend (fuente de verdad) o caer a localStorage
+  let apts = [];
+  try {
+    const data = await backendGet({ action:'getAll' });
+    if (data) apts = data.filter(a => a.date === ds && a.status !== 'cancelled');
+    else throw new Error('no backend');
+  } catch(e) {
+    apts = getStoredApts().filter(a => a.date === ds && a.status !== 'cancelled');
+  }
+
+  const newDurMins = st.dur ? parseMins(st.dur) : 30;
+  const unavailable = getUnavailableSlots(apts, newDurMins);
+
+  g.innerHTML='';
   genSlots().forEach(t=>{
     const el = document.createElement('div'); el.className='t-slot'; el.textContent=t;
-    if (taken.includes(t)) { el.classList.add('taken'); }
+    if (unavailable.has(t)) { el.classList.add('taken'); }
     else {
       el.addEventListener('click',()=>{
         document.querySelectorAll('.t-slot').forEach(s=>s.classList.remove('chosen'));
@@ -1185,8 +1225,10 @@ document.querySelectorAll('.svc-row').forEach(r=>{
     document.querySelectorAll('.svc-row').forEach(s=>s.classList.remove('active'));
     r.classList.add('active');
     st.svc=r.dataset.svc; st.price=parseInt(r.dataset.price); st.dur=r.dataset.dur;
+    st.time=null; // resetear hora al cambiar servicio (duración puede cambiar)
     document.getElementById('stickyText').textContent = `${st.svc}  ·  $${st.price.toLocaleString('es-CO')}`;
     document.getElementById('stickyBar').classList.add('show');
+    if (st.date) drawSlots(st.date); // refrescar slots con nueva duración
     sync(); ready();
     notify(`${st.svc} seleccionado`);
   });
@@ -1387,13 +1429,10 @@ function showToastClient(msg,type){
 }
 
 /* ── NOTIFICATIONS ── */
+// Las notificaciones (email/WhatsApp) son disparadas automáticamente
+// por el Apps Script backend cuando guarda la cita en Google Sheets → N8N.
 function sendNotification(payload){
-  const APPS_SCRIPT_URL='https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
-  console.log('[SBS Notif]',payload.trigger, payload);
-  /* PRODUCTION — uncomment after deploying Apps Script:
-  fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  */
+  console.log('[SBS Notif]', payload.trigger, payload);
 }
 
 </script>
