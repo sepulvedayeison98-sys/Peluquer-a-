@@ -1077,6 +1077,10 @@ footer {
 <script>
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 // ── BACKEND (Google Apps Script) ──────────────────────────────────
 // Pega aquí la URL después de desplegar el script en Google Apps Script
@@ -1203,6 +1207,13 @@ async function drawSlots(ds) {
 
   const newDurMins = st.dur ? parseMins(st.dur) : 30;
   const unavailable = getUnavailableSlots(apts, newDurMins);
+
+  // Bloquear horas pasadas si el día seleccionado es hoy
+  if (ds === todayStr()) {
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes() + 30; // +30 min de margen
+    genSlots().forEach(s => { if (timeToMins(s) < nowMins) unavailable.add(s); });
+  }
 
   g.innerHTML='';
   genSlots().forEach(t=>{
