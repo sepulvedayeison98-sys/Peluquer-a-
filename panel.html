@@ -1061,13 +1061,14 @@ function renderDashTable(dateStr){
   }
   tbody.innerHTML=apts.map(a=>`
     <tr onclick="openApt(${a.id})">
-      <td><div class="client-name">${a.name}</div><div class="client-tel">${a.tel}</div></td>
+      <td><div class="client-name">${a.name}</div><div class="client-tel">${a.tel}</div>${a.email?`<div class="client-tel" style="color:var(--gold);margin-top:2px">${a.email}</div>`:''}</td>
       <td><div class="time-cell">${a.time}</div><div class="time-dur">${a.dur}</div></td>
       <td style="font-size:13px">${a.svc}</td>
       <td>${badgeHtml(a.status)}</td>
       <td class="price-cell">$${a.price.toLocaleString('es-CO')}</td>
       <td><div class="row-actions">
         ${a.status==='pending'?`<button class="row-btn confirm" onclick="event.stopPropagation();changeStatus(${a.id},'confirmed')">Confirmar</button>`:''}
+        ${a.status!=='cancelled'&&a.status!=='done'?`<button class="row-btn" onclick="event.stopPropagation();openReschedBarber(${a.id})">Reagendar</button>`:''}
         ${a.status!=='cancelled'&&a.status!=='done'?`<button class="row-btn cancel" onclick="event.stopPropagation();changeStatus(${a.id},'cancelled')">Cancelar</button>`:''}
         ${a.status==='confirmed'?`<button class="row-btn" onclick="event.stopPropagation();changeStatus(${a.id},'done')">Completar</button>`:''}
       </div></td>
@@ -1154,7 +1155,7 @@ function renderCitasTable(){
   if(!apts.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">✦</div><p>No hay citas en este período</p></div></td></tr>`;return;}
   tbody.innerHTML=apts.map(a=>`
     <tr onclick="openApt(${a.id})">
-      <td><div class="client-name">${a.name}</div><div class="client-tel">${a.tel}</div></td>
+      <td><div class="client-name">${a.name}</div><div class="client-tel">${a.tel}</div>${a.email?`<div class="client-tel" style="color:var(--gold);margin-top:2px">${a.email}</div>`:''}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${fmtDisplay(a.date)}</td>
       <td><div class="time-cell">${a.time}</div><div class="time-dur">${a.dur}</div></td>
       <td style="font-size:13px">${a.svc}</td>
@@ -1162,6 +1163,7 @@ function renderCitasTable(){
       <td class="price-cell">$${a.price.toLocaleString('es-CO')}</td>
       <td><div class="row-actions">
         ${(a.status==='pending'||a.status==='rescheduled')?`<button class="row-btn confirm" onclick="event.stopPropagation();changeStatus(${a.id},'confirmed');renderCitasTable()">Confirmar</button>`:''}
+        ${a.status!=='cancelled'&&a.status!=='done'?`<button class="row-btn" onclick="event.stopPropagation();openReschedBarber(${a.id})">Reagendar</button>`:''}
         ${a.status!=='cancelled'&&a.status!=='done'?`<button class="row-btn cancel" onclick="event.stopPropagation();changeStatus(${a.id},'cancelled');renderCitasTable()">Cancelar</button>`:''}
         ${a.status==='confirmed'?`<button class="row-btn" onclick="event.stopPropagation();changeStatus(${a.id},'done');renderCitasTable()">Completar</button>`:''}
       </div></td>
