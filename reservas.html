@@ -1078,6 +1078,39 @@ footer {
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
+// ── BACKEND (Google Apps Script) ──────────────────────────────────
+// Pega aquí la URL después de desplegar el script en Google Apps Script
+const BACKEND_URL = '';  // ej: 'https://script.google.com/macros/s/ABC123.../exec'
+
+async function backendPost(payload) {
+  if (!BACKEND_URL) return null; // sin backend configurado, solo localStorage
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // evita CORS preflight
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Backend no disponible, usando solo localStorage:', e.message);
+    return null;
+  }
+}
+
+async function backendGet(params = {}) {
+  if (!BACKEND_URL) return null;
+  try {
+    const qs = new URLSearchParams({ action: 'getAll', ...params }).toString();
+    const res = await fetch(`${BACKEND_URL}?${qs}`);
+    const json = await res.json();
+    return json.ok ? json.data : null;
+  } catch (e) {
+    console.warn('Backend no disponible:', e.message);
+    return null;
+  }
+}
+// ─────────────────────────────────────────────────────────────────
+
 let st = { svc:null, price:null, dur:null, date:null, time:null, vd: new Date() };
 
 /* SLOTS */
@@ -1184,22 +1217,39 @@ function saveStoredApts(a){localStorage.setItem(SBS_KEY,JSON.stringify(a));}
 function fmtDisp(ds){if(!ds)return'—';const[y,m,d]=ds.split('-');return d+' de '+MONTHS[parseInt(m)-1]+' '+y;}
 
 /* ── SUBMIT single handler ── */
-document.getElementById('bookBtn').addEventListener('click',()=>{
+document.getElementById('bookBtn').addEventListener('click', async ()=>{
   const nombre=document.getElementById('fNombre').value.trim();
   const email=document.getElementById('fEmail').value.trim();
   const tel=document.getElementById('fTel').value.trim();
   const notas=document.getElementById('fNotas').value.trim();
   if(!nombre){notify('Ingresa tu nombre para continuar');return;}
+
+  // Deshabilitar botón mientras procesa
+  const btn=document.getElementById('bookBtn');
+  btn.disabled=true; btn.textContent='Guardando…';
+
   const code='SBS-'+Math.random().toString(36).substr(2,6).toUpperCase();
   const apt={code,name:nombre,email,tel,notes:notas,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',createdAt:new Date().toISOString()};
+
+  // 1. Guardar en localStorage (inmediato, funciona offline)
   const apts=getStoredApts(); apts.push(apt); saveStoredApts(apts);
+
+  // 2. Guardar en Google Sheets (en paralelo, no bloquea el UI)
+  backendPost({ action:'save', apt }).then(res=>{
+    if(res && !res.ok) console.warn('Backend error al guardar:', res.error);
+  });
+
+  // 3. Notificación
   sendNotification({trigger:'new_booking',
     apt:{code,name:nombre,email,tel,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',notes:notas},
     toClient:{email,tel},toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
+
+  // 4. Mostrar confirmación
   document.getElementById('confCode').textContent=code;
   document.getElementById('bookingForm').style.display='none';
   document.getElementById('successScreen').classList.add('show');
   window.scrollTo({top:document.getElementById('reservar').offsetTop-80,behavior:'smooth'});
+  btn.disabled=false; btn.textContent='Reservar cita';
 });
 
 function resetForm() {
@@ -1277,6 +1327,7 @@ function confirmCancelClient(){
   const apts=getStoredApts();
   const a=apts.find(x=>x.code===activeAptCode); if(!a) return;
   a.status='cancelled'; saveStoredApts(apts);
+  backendPost({ action:'cancel', code:a.code }); // sync backend
   closeClientModal('cancelModal');
   sendNotification({trigger:'cancel_by_client',
     apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:a.date,time:a.time,status:'cancelled'},
@@ -1314,6 +1365,7 @@ function confirmReschedClient(){
   const oldDate=a.date, oldTime=a.time;
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;
   saveStoredApts(apts);
+  backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime }); // sync backend
   closeClientModal('reschedModal');
   sendNotification({trigger:'reschedule_by_client',
     apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:newDate,time:newTime,status:'rescheduled'},

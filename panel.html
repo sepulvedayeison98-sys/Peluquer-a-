@@ -854,6 +854,44 @@ const todayStr=fmtDate(TODAY);
 function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmtDisplay(ds){const[y,m,d]=ds.split('-');return `${d} de ${MONTHS[parseInt(m)-1]} ${y}`}
 
+/* ── BACKEND (Google Apps Script) ── */
+// Pega aquí la URL después de desplegar el script
+const BACKEND_URL = '';  // ej: 'https://script.google.com/macros/s/ABC123.../exec'
+
+async function backendPost(payload) {
+  if (!BACKEND_URL) return null;
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Backend no disponible:', e.message);
+    return null;
+  }
+}
+
+async function syncFromBackend() {
+  if (!BACKEND_URL) return;
+  try {
+    const res = await fetch(`${BACKEND_URL}?action=getAll`);
+    const json = await res.json();
+    if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
+      // Fusionar: backend tiene la verdad, pero guardar en localStorage también
+      localStorage.setItem(SBS_KEY, JSON.stringify(json.data));
+      refreshApts();
+      renderDashTable();
+      renderMiniCal();
+      renderKPIs();
+      console.log(`✅ ${json.data.length} citas sincronizadas desde Sheets`);
+    }
+  } catch (e) {
+    console.warn('No se pudo sincronizar con backend:', e.message);
+  }
+}
+
 /* ── SHARED STORAGE with client app ── */
 const SBS_KEY='sbs_appointments';
 function loadApts(){
@@ -1111,9 +1149,15 @@ function renderCitasTable(){
 
 /* ── STATUS ── */
 function changeStatus(id,newStatus){
-  refreshApts(); // asegura tener las citas más recientes antes de modificar
+  refreshApts();
   const a=appointments.find(x=>x.id===id);
-  if(a){a.status=newStatus;persistApts();renderDashTable();renderMiniCal();}
+  if(a){
+    a.status=newStatus;
+    persistApts();
+    backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // sync backend
+    renderDashTable();
+    renderMiniCal();
+  }
 }
 
 /* ── MODAL ── */
@@ -1188,7 +1232,8 @@ function changeStatusNotify(id, newStatus){
   refreshApts(); // asegura tener las citas más recientes antes de modificar
   const a = appointments.find(x=>x.id===id); if(!a) return;
   a.status = newStatus;
-  persistApts(); // 🐛 fix: persistir antes de notificar
+  persistApts();
+  backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // sync backend
   if(newStatus==='confirmed'){
     sendAdminNotif({trigger:'confirm_by_barber', apt:a,
       toClient:{email:a.email||'cliente@demo.com',tel:a.tel},
@@ -1599,6 +1644,8 @@ document.addEventListener('DOMContentLoaded', function() {
   renderMiniCal();
   renderKPIs();
   renderIngresos();
+  // Sincronizar desde Google Sheets al cargar (si el backend está configurado)
+  syncFromBackend();
 });
 
 // Sincronización en tiempo real: si el cliente agenda desde otra pestaña,
