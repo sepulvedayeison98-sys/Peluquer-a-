@@ -1333,19 +1333,23 @@ document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
 
 drawCal(); sync();
 
-// Auto-sync localStorage desde backend cada 30s
-// Mantiene las citas del cliente actualizadas si el barbero cancela o modifica
+// Auto-sync desde backend cada 30s — actualiza estado si el barbero hizo cambios
 setInterval(async () => {
   const data = await backendGet({ action:'getAll' });
-  if (data) {
-    const stored = getStoredApts();
-    // Actualizar solo las citas que el usuario ya tiene registradas
-    const updatedCodes = new Set(data.map(a => a.code));
-    const merged = stored.map(local => {
-      const server = data.find(a => a.code === local.code);
-      return server || local; // si existe en servidor, usar versión del servidor
-    });
-    saveStoredApts(merged);
+  if (!data) return;
+  const stored = getStoredApts();
+  let changed = false;
+  const merged = stored.map(local => {
+    const server = data.find(a => a.code === local.code);
+    if (server && server.status !== local.status) changed = true;
+    return server || local;
+  });
+  saveStoredApts(merged);
+  // Si algo cambió y hay citas visibles en pantalla, refrescar la lista
+  if (changed && document.getElementById('myAptsList').children.length > 0) {
+    const code  = document.getElementById('lookupCode').value.trim().toUpperCase();
+    const email = document.getElementById('lookupEmail').value.trim().toLowerCase();
+    if (code || email) lookupApt(); // re-renderiza con estados actualizados
   }
 }, 30000);
 
