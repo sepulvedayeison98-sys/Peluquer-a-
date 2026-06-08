@@ -1419,11 +1419,8 @@ function confirmCancelClient(){
   const a=apts.find(x=>x.code===activeAptCode); if(!a) return;
   a.status='cancelled'; saveStoredApts(apts);
   backendPost({ action:'cancel', code:a.code }); // sync backend
+  notifyN8N('cancel_by_client', a); // notificar barbero directamente
   closeClientModal('cancelModal');
-  sendNotification({trigger:'cancel_by_client',
-    apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:a.date,time:a.time,status:'cancelled'},
-    toClient:{email:a.email,tel:a.tel},
-    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
   showToastClient('Cita cancelada. Se notificó al barbero.','warning');
   lookupApt();
 }
@@ -1457,12 +1454,8 @@ function confirmReschedClient(){
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;
   saveStoredApts(apts);
   backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime }); // sync backend
+  notifyN8N('reschedule', a, { date: newDate, time: newTime }); // notificar cliente y barbero directamente
   closeClientModal('reschedModal');
-  sendNotification({trigger:'reschedule_by_client',
-    apt:{code:a.code,name:a.name||a.nombre,email:a.email,tel:a.tel,svc:a.svc,price:a.price,dur:a.dur,date:newDate,time:newTime,status:'rescheduled'},
-    oldDate,oldTime,
-    toClient:{email:a.email,tel:a.tel},
-    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});
   showToastClient('Solicitud de reagendamiento enviada.','success');
   lookupApt();
 }
