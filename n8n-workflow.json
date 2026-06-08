@@ -1,0 +1,149 @@
+{
+  "name": "Barber Style — Notificaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "barber-style",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook Barber Style",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "barber-style-notif"
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "save", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nueva_cita"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "cancel", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelada"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "reschedule", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reagendada"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "updateStatus", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "estado_actualizado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-switch",
+      "name": "¿Qué acción?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.apt.email }}",
+        "subject": "=✅ Cita agendada — Barber Style · {{ $json.apt.date }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style=\"margin:0;padding:0;background:#f4f0eb;font-family:Georgia,serif\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f0eb;padding:40px 20px\"><tr><td align=\"center\"><table width=\"520\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0a0806;border-radius:4px\"><tr><td style=\"background:#1a1410;padding:28px 40px;text-align:center;border-bottom:1px solid rgba(201,169,110,.2)\"><span style=\"font-family:Georgia,serif;font-size:28px;color:#c9a96e;letter-spacing:4px;font-style:italic\">Barber Style</span></td></tr><tr><td style=\"padding:36px 40px;color:#fff\"><h2 style=\"color:#c9a96e;font-weight:400;font-size:20px;margin:0 0 16px\">Cita agendada ✓</h2><p style=\"color:rgba(255,255,255,.7);font-size:13px;line-height:1.7;margin:0 0 24px\">Hola <strong style=\"color:#fff\">{{ $json.apt.name }}</strong>, tu cita ha sido registrada exitosamente.</p><table style=\"width:100%;border-collapse:collapse\"><tr><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em\">Servicio</td><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#fff;font-size:13px;text-align:right\">{{ $json.apt.svc }}</td></tr><tr><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em\">Fecha</td><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#fff;font-size:13px;text-align:right\">{{ $json.apt.date }}</td></tr><tr><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em\">Hora</td><td style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#fff;font-size:13px;text-align:right\">{{ $json.apt.time }}</td></tr><tr><td style=\"padding:10px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em\">Código</td><td style=\"padding:10px 0;color:#c9a96e;font-size:13px;text-align:right;font-family:monospace\">{{ $json.apt.code }}</td></tr></table></td></tr><tr><td style=\"background:#1a1410;padding:20px 40px;text-align:center;border-top:1px solid rgba(201,169,110,.2)\"><p style=\"margin:0;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.15em;text-transform:uppercase\">Barber Style · Tu barbería de confianza</p></td></tr></table></td></tr></table></body></html>",
+        "options": { "senderName": "Barber Style" }
+      },
+      "id": "node-email-cliente-nueva",
+      "name": "Email Cliente — Nueva Cita",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 160]
+    },
+    {
+      "parameters": {
+        "sendTo": "sepulvedayeison98@gmail.com",
+        "subject": "=📋 Nueva cita: {{ $json.apt.name }} — {{ $json.apt.date }} {{ $json.apt.time }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style=\"font-family:Georgia,serif;background:#0a0806;color:#fff;padding:32px\"><h2 style=\"color:#c9a96e;font-weight:400\">Nueva cita agendada</h2><table style=\"width:100%;border-collapse:collapse\"><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Cliente</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.name }}</td></tr><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Servicio</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.svc }}</td></tr><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Fecha</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.date }}</td></tr><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Hora</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.time }}</td></tr><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Tel</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.tel }}</td></tr><tr><td style=\"padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase\">Notas</td><td style=\"padding:8px 0;text-align:right\">{{ $json.apt.notes }}</td></tr></table></body></html>",
+        "options": { "senderName": "Barber Style" }
+      },
+      "id": "node-email-barbero-nueva",
+      "name": "Notificar Barbero — Nueva Cita",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 340]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.apt.email }}",
+        "subject": "=❌ Tu cita fue cancelada — Barber Style",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Georgia,serif;background:#0a0806;color:#fff;padding:32px\"><h2 style=\"color:#e53935;font-weight:400\">❌ Cita cancelada</h2><p>Hola <strong>{{ $json.apt.name }}</strong>, tu cita del <strong>{{ $json.apt.date }}</strong> a las <strong>{{ $json.apt.time }}</strong> ha sido cancelada.</p><p style=\"color:rgba(255,255,255,.5);font-size:12px\">Si deseas reagendar, visita nuestro sitio web.</p></div>",
+        "options": { "senderName": "Barber Style" }
+      },
+      "id": "node-email-cancelada",
+      "name": "Email Cliente — Cancelada",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 520]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.apt.email }}",
+        "subject": "=📅 Cita reagendada — Barber Style · {{ $json.date }}",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Georgia,serif;background:#0a0806;color:#fff;padding:32px\"><h2 style=\"color:#c9a96e;font-weight:400\">📅 Cita reagendada</h2><p>Hola <strong>{{ $json.apt.name }}</strong>, tu cita ha sido reagendada.</p><p>Nueva fecha: <strong style=\"color:#c9a96e\">{{ $json.date }}</strong> a las <strong style=\"color:#c9a96e\">{{ $json.time }}</strong></p></div>",
+        "options": { "senderName": "Barber Style" }
+      },
+      "id": "node-email-reagendada",
+      "name": "Email Cliente — Reagendada",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 700]
+    }
+  ],
+  "connections": {
+    "Webhook Barber Style": {
+      "main": [[{ "node": "¿Qué acción?", "type": "main", "index": 0 }]]
+    },
+    "¿Qué acción?": {
+      "main": [
+        [
+          { "node": "Email Cliente — Nueva Cita", "type": "main", "index": 0 },
+          { "node": "Notificar Barbero — Nueva Cita", "type": "main", "index": 0 }
+        ],
+        [{ "node": "Email Cliente — Cancelada", "type": "main", "index": 0 }],
+        [{ "node": "Email Cliente — Reagendada", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "versionId": "bs-v1"
+}
