@@ -859,8 +859,12 @@ const SBS_KEY='sbs_appointments';
 function loadApts(){
   try{
     const raw=JSON.parse(localStorage.getItem(SBS_KEY)||'[]');
+    // Filtrar citas demo que pudieron haberse guardado antes
+    const real=raw.filter(a=>!String(a.code||'').startsWith('SBS-DEMO'));
+    // Si había demos guardados, limpiarlos del storage
+    if(real.length !== raw.length) localStorage.setItem(SBS_KEY,JSON.stringify(real));
     // Normalize client format (nombre) to admin format (name)
-    return raw.map((a,i)=>({
+    return real.map((a,i)=>({
       id: a.id||i+1,
       name: a.name||a.nombre||'—',
       tel: a.tel||'—',
@@ -878,20 +882,15 @@ function loadApts(){
 }
 function persistApts(){localStorage.setItem(SBS_KEY,JSON.stringify(appointments));}
 
-// Seed demo data if storage is empty
-const DEMO=[
-  {id:1,name:'Carlos Mejía',   tel:'+57 300 123 4567',svc:'Corte + Barba',        price:42000,dur:'60 min',date:todayStr,      time:'08:00',status:'confirmed',notes:'',code:'SBS-DEMO01'},
-  {id:2,name:'Andrés Torres',  tel:'+57 311 234 5678',svc:'Barba o Afeitada',     price:18000,dur:'30 min',date:todayStr,      time:'09:00',status:'done',     notes:'Barba con diseño',code:'SBS-DEMO02'},
-  {id:3,name:'Felipe Ríos',    tel:'+57 322 345 6789',svc:'Corte + Barba + Cejas',price:44000,dur:'60 min',date:todayStr,      time:'10:30',status:'pending',  notes:'',code:'SBS-DEMO03'},
-  {id:4,name:'Sebastián Gil',  tel:'+57 333 456 7890',svc:'Corte solo',            price:25000,dur:'30 min',date:todayStr,      time:'12:00',status:'confirmed',notes:'',code:'SBS-DEMO04'},
-  {id:5,name:'Mateo Herrera',  tel:'+57 344 567 8901',svc:'Marcación de cejas',   price:8000, dur:'10 min',date:todayStr,      time:'14:00',status:'cancelled',notes:'',code:'SBS-DEMO05'},
-  {id:6,name:'Julián Castro',  tel:'+57 355 678 9012',svc:'Corte + Afeitada',     price:38000,dur:'50 min',date:'2026-06-09', time:'09:00',status:'pending',  notes:'',code:'SBS-DEMO06'},
-  {id:7,name:'David Moreno',   tel:'+57 366 789 0123',svc:'Corte + Cejas',        price:30000,dur:'40 min',date:'2026-06-10', time:'11:00',status:'rescheduled',notes:'',code:'SBS-DEMO07'},
-];
-let stored=loadApts();
-let appointments = stored.length ? stored : DEMO;
-if(!stored.length) persistApts();
+// Cargar citas reales desde localStorage (sin datos demo)
+let appointments = loadApts();
 let aptIdSeq = appointments.reduce((m,a)=>Math.max(m,a.id),0)+1;
+
+// Refresca appointments desde localStorage (llama antes de cualquier render)
+function refreshApts(){
+  appointments = loadApts();
+  aptIdSeq = appointments.reduce((m,a)=>Math.max(m,a.id),0)+1;
+}
 let currentFilter='hoy';
 let currentIngPeriod='semana';
 let miniCalVD=new Date(TODAY);
@@ -907,7 +906,8 @@ function toggleKpi(){
 
 /* ── KPIs dinámicos ── */
 function renderKPIs(){
-  const apts = appointments; // ya cargados en memoria
+  refreshApts();
+  const apts = appointments;
   const now  = new Date();
   const todayStr = now.toISOString().slice(0,10);
 
@@ -989,6 +989,7 @@ function badgeHtml(s){
 
 /* ── DASH TABLE ── */
 function renderDashTable(dateStr){
+  refreshApts();
   dateStr=dateStr||selectedDayStr;
   const apts=appointments.filter(a=>a.date===dateStr).sort((a,b)=>a.time.localeCompare(b.time));
   const isToday=dateStr===todayStr;
@@ -1016,6 +1017,7 @@ function renderDashTable(dateStr){
 
 /* ── MINI CALENDAR ── */
 function renderMiniCal(){
+  refreshApts();
   const y=miniCalVD.getFullYear(),m=miniCalVD.getMonth();
   document.getElementById('miniCalMonthLabel').innerHTML=`${MONTHS[m]} <em>${y}</em>`;
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
@@ -1076,6 +1078,7 @@ function filterCitas(f,el){
 }
 
 function renderCitasTable(){
+  refreshApts();
   const sf=document.getElementById('statusFilter').value;
   let apts=[...appointments];
   const now=new Date(); now.setHours(0,0,0,0);
