@@ -1084,7 +1084,20 @@ function todayStr() {
 
 // ── BACKEND (Google Apps Script) ──────────────────────────────────
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
-// Los correos son enviados directamente por Apps Script (MailApp)
+const N8N_WEBHOOK = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
+
+// Llama a N8N directamente desde el navegador (sin pasar por Apps Script)
+async function notifyN8N(action, apt, extra) {
+  try {
+    await fetch(N8N_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, apt, ...extra })
+    });
+  } catch(e) {
+    console.warn('N8N webhook error:', e.message);
+  }
+}
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null;
@@ -1294,7 +1307,10 @@ document.getElementById('bookBtn').addEventListener('click', async ()=>{
     if(res && !res.ok) console.warn('Backend error al guardar:', res.error);
   });
 
-  // 3. Notificación legacy (stub vacío)
+  // 3. Notificar via N8N directamente (emails al cliente y barbero)
+  notifyN8N('save', apt);
+
+  // 4. Notificación legacy (stub vacío)
   sendNotification({trigger:'new_booking',
     apt:{code,name:nombre,email,tel,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',notes:notas},
     toClient:{email,tel},toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}});

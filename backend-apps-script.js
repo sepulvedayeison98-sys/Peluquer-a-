@@ -31,10 +31,8 @@ function err(msg) {
 // con el payload codificado en el parámetro "p".
 function doGet(e) {
   try {
-    Logger.log('doGet params: ' + JSON.stringify(e.parameter));
     // Mutaciones enviadas desde el navegador (workaround redirect POST→GET)
     if (e.parameter && e.parameter.p) {
-      Logger.log('doGet: procesando accion via ?p');
       const body = JSON.parse(e.parameter.p);
       return handleAction(body);
     }
@@ -97,9 +95,8 @@ function saveApt(apt) {
     apt.svc||'', Number(apt.price)||0, apt.dur||'', apt.date||'', apt.time||'',
     apt.status||'pending', apt.notes||'', apt.createdAt||new Date().toISOString()]);
 
-  // Enviar emails directamente via MailApp (sin branding de terceros)
-  try { if (apt.email) sendConfirmationToClient(apt); } catch(e) { Logger.log('Email cliente error: '+e.message); }
-  try { sendNotificationToBarbero(apt); } catch(e) { Logger.log('Email barbero error: '+e.message); }
+  // Notificar a N8N (envía emails + WhatsApp)
+  notifyN8N({ action: 'save', apt: apt });
 
   return {id, code:apt.code};
 }
@@ -111,9 +108,7 @@ function updateStatus(code, newStatus) {
   const sheet = getSheet();
   sheet.getRange(row, COL.status).setValue(newStatus);
   const apt = rowToObj(sheet.getRange(row, 1, 1, 13).getValues()[0]);
-  if (newStatus === 'confirmed') {
-    try { if (apt.email) sendStatusUpdateToClient(apt, 'confirmada'); } catch(e) { Logger.log('Email confirmacion error: '+e.message); }
-  }
+  notifyN8N({ action: 'updateStatus', apt: apt, status: newStatus });
   return {code, status:newStatus};
 }
 
@@ -124,7 +119,7 @@ function cancelApt(code) {
   const sheet = getSheet();
   sheet.getRange(row, COL.status).setValue('cancelled');
   const apt = rowToObj(sheet.getRange(row, 1, 1, 13).getValues()[0]);
-  try { if (apt.email) sendStatusUpdateToClient(apt, 'cancelada'); } catch(e) { Logger.log('Email cancelacion error: '+e.message); }
+  notifyN8N({ action: 'cancel', apt: apt });
   return {code, status:'cancelled'};
 }
 
@@ -137,8 +132,7 @@ function rescheduleApt(code, newDate, newTime) {
   sheet.getRange(row, COL.time).setValue(newTime);
   sheet.getRange(row, COL.status).setValue('rescheduled');
   const apt = rowToObj(sheet.getRange(row, 1, 1, 13).getValues()[0]);
-  try { if (apt.email) sendRescheduleToClient(apt, newDate, newTime); } catch(e) { Logger.log('Email reschedule cliente error: '+e.message); }
-  try { sendRescheduleToBarbero(apt, newDate, newTime); } catch(e) { Logger.log('Email reschedule barbero error: '+e.message); }
+  notifyN8N({ action: 'reschedule', apt: apt, date: newDate, time: newTime });
   return {code, date:newDate, time:newTime, status:'rescheduled'};
 }
 
@@ -262,32 +256,6 @@ function sendRescheduleToClient(apt, newDate, newTime) {
   MailApp.sendEmail({
     to: apt.email,
     subject: '📅 Cita reagendada — Barber Style · ' + fmtDateEs(newDate),
-    htmlBody: html,
-    name: 'Barber Style'
-  });
-}
-
-function sendRescheduleToBarbero(apt, newDate, newTime) {
-  const html = emailBase(
-    '<h2 style="margin:0 0 20px;font-size:20px;color:#c9a96e;font-weight:400;">📅 Cita reagendada</h2>' +
-    '<p style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.7;margin:0 0 24px;">Una cita ha sido reagendada.</p>' +
-    '<table style="width:100%;border-collapse:collapse;">' +
-    '<tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em;">Cliente</td>' +
-    '<td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#fff;font-size:13px;text-align:right;">' + apt.name + '</td></tr>' +
-    '<tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em;">Servicio</td>' +
-    '<td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#fff;font-size:13px;text-align:right;">' + apt.svc + '</td></tr>' +
-    '<tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em;">Nueva fecha</td>' +
-    '<td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#c9a96e;font-size:13px;text-align:right;font-weight:bold;">' + fmtDateEs(newDate) + '</td></tr>' +
-    '<tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em;">Nueva hora</td>' +
-    '<td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#c9a96e;font-size:13px;text-align:right;font-weight:bold;">' + newTime + '</td></tr>' +
-    '<tr><td style="padding:8px 0;color:rgba(255,255,255,.5);font-size:12px;text-transform:uppercase;letter-spacing:.1em;">Tel</td>' +
-    '<td style="padding:8px 0;color:#fff;font-size:13px;text-align:right;">' + apt.tel + '</td></tr>' +
-    '</table>'
-  );
-
-  MailApp.sendEmail({
-    to: BARBERO_EMAIL,
-    subject: '📅 Cita reagendada: ' + apt.name + ' — ' + fmtDateEs(newDate) + ' ' + newTime,
     htmlBody: html,
     name: 'Barber Style'
   });
