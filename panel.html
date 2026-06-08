@@ -1228,11 +1228,8 @@ function switchNotifTab(el, targetId){
 function cancelByBarber(id){
   const a = appointments.find(x=>x.id===id); if(!a) return;
   if(!confirm(`¿Cancelar la cita de ${a.name}? Se notificará al cliente.`)) return;
-  a.status='cancelled';persistApts();
-  sendAdminNotif({trigger:'cancel_by_barber', apt:a,
-    toClient:{email: a.email||'cliente@demo.com', tel:a.tel},
-    toBarber:{email:'barbero@barberstyle.co', tel:'+573001234567'}
-  });
+  a.status='cancelled'; persistApts();
+  backendPost({ action:'cancel', code:a.code }); // guarda en Sheets + dispara N8N → correo
   closeModal(); renderDashTable(); renderMiniCal();
   showAdminToast(`Cita de ${a.name} cancelada. Cliente notificado.`, 'warning');
 }
@@ -1243,12 +1240,8 @@ function changeStatusNotify(id, newStatus){
   const a = appointments.find(x=>x.id===id); if(!a) return;
   a.status = newStatus;
   persistApts();
-  backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // sync backend
+  backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // Sheets + N8N
   if(newStatus==='confirmed'){
-    sendAdminNotif({trigger:'confirm_by_barber', apt:a,
-      toClient:{email:a.email||'cliente@demo.com',tel:a.tel},
-      toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}
-    });
     showAdminToast(`Cita de ${a.name} confirmada. Cliente notificado.`, 'success');
   }
   if(newStatus==='done'){
@@ -1275,8 +1268,11 @@ function saveNewApt(){
   const notas=document.getElementById('nfNotas').value.trim();
   if(!nombre||!fecha||!hora||!svcVal){alert('Completa los campos requeridos');return;}
   const[svc,price,dur]=svcVal.split('|');
-  appointments.push({id:aptIdSeq++,name:nombre,tel:tel||'—',email:'',svc,price:parseInt(price),dur,date:fecha,time:hora,status:'confirmed',notes:notas,code:'SBS-'+Math.random().toString(36).substr(2,6).toUpperCase()});
+  const newCode='SBS-'+Math.random().toString(36).substr(2,6).toUpperCase();
+  const newApt={id:aptIdSeq++,name:nombre,tel:tel||'—',email:'',svc,price:parseInt(price),dur,date:fecha,time:hora,status:'confirmed',notes:notas,code:newCode,createdAt:new Date().toISOString()};
+  appointments.push(newApt);
   persistApts();
+  backendPost({ action:'save', apt:newApt }); // guarda en Sheets + dispara N8N
   document.getElementById('newAptModal').classList.remove('open');
   renderDashTable(); renderMiniCal();
   ['nfNombre','nfTel','nfNotas'].forEach(id=>document.getElementById(id).value='');
@@ -1493,10 +1489,7 @@ function confirmReschedBarber(){
   const oldDate=a.date, oldTime=a.time;
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;persistApts();
 
-  sendAdminNotif({trigger:'reschedule_by_barber', apt:a, oldDate, oldTime,
-    toClient:{email:a.email||'cliente@demo.com',tel:a.tel},
-    toBarber:{email:'barbero@barberstyle.co',tel:'+573001234567'}
-  });
+  backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime }); // Sheets + N8N
 
   closeReschedBarber();
   renderDashTable(); renderMiniCal();
@@ -1512,18 +1505,9 @@ document.getElementById('reschedBarberModal').addEventListener('click',e=>{
 
 
 /* ── NOTIFICATION SYSTEM (ADMIN) ── */
+// sendAdminNotif eliminada — las notificaciones las maneja backendPost → Apps Script → N8N
 function sendAdminNotif(payload){
-  const APPS_SCRIPT_URL='https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
-  const msgs = buildAdminMessages(payload.trigger, payload.apt, payload.oldDate, payload.oldTime);
-  console.log('[SBS Admin Notif]', payload.trigger, msgs);
-
-  /* PRODUCTION (uncomment when deployed):
-  fetch(APPS_SCRIPT_URL,{
-    method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-  */
+  console.log('[SBS Admin Notif legacy]', payload.trigger); // no-op, mantener por compatibilidad
 }
 
 function buildAdminMessages(trigger, a, oldDate, oldTime){
