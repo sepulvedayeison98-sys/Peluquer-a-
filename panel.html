@@ -1509,7 +1509,7 @@ const AUTH = {
   PASS: 'bs2025*',
   MAX_ATTEMPTS: 5,
   LOCKOUT_MINUTES: 15,
-  SESSION_KEY: 'sbs_admin_session'
+  SESSION_KEY: 'bs_admin_v2'   // clave nueva invalida sesiones anteriores
 };
 
 let loginAttempts = 0;
@@ -1519,10 +1519,12 @@ function checkSession() {
   const session = sessionStorage.getItem(AUTH.SESSION_KEY);
   const ls = document.getElementById('loginScreen');
   if (!ls) return;
-  if (session === 'authenticated') {
+  // Valida que la sesión corresponda al usuario actual (no a credenciales anteriores)
+  if (session === AUTH.USER) {
     ls.style.display = 'none';
     document.body.style.overflow = '';
   } else {
+    sessionStorage.removeItem(AUTH.SESSION_KEY); // limpia sesiones inválidas
     ls.style.display = 'flex';
     document.body.style.overflow = 'hidden';
   }
@@ -1540,8 +1542,8 @@ function attemptLogin() {
   const pass = document.getElementById('loginPass').value;
 
   if (user === AUTH.USER && pass === AUTH.PASS) {
-    // Success
-    sessionStorage.setItem(AUTH.SESSION_KEY, 'authenticated');
+    // Success — guarda el usuario para validación futura
+    sessionStorage.setItem(AUTH.SESSION_KEY, AUTH.USER);
     document.getElementById('loginScreen').style.display = 'none';
     document.body.style.overflow = '';
     loginAttempts = 0;
