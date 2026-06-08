@@ -863,14 +863,15 @@ const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IO
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null;
+  // GET con payload codificado — evita el problema de redirect 302 POST→GET de Apps Script
   try {
-    const res = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    return await res.json();
-  } catch (e) {
+    const url = BACKEND_URL + '?p=' + encodeURIComponent(JSON.stringify(payload));
+    const res = await fetch(url);
+    if (res.ok) {
+      try { return await res.json(); } catch(e) { return {ok:true}; }
+    }
+    return null;
+  } catch(e) {
     console.warn('Backend no disponible:', e.message);
     return null;
   }

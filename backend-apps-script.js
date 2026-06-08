@@ -26,8 +26,16 @@ function err(msg) {
 }
 
 // ─── GET handler ──────────────────────────────────────────────────
+// Nota: los navegadores convierten POST→GET en redirects 302.
+// Para evitar ese problema, el frontend envía las mutaciones como GET
+// con el payload codificado en el parámetro "p".
 function doGet(e) {
   try {
+    // Mutaciones enviadas desde el navegador (workaround redirect POST→GET)
+    if (e.parameter && e.parameter.p) {
+      const body = JSON.parse(e.parameter.p);
+      return handleAction(body);
+    }
     const action = (e.parameter && e.parameter.action) || 'getAll';
     if (action === 'getAll') return ok(getAllApts());
     if (action === 'ping')   return ok({status:'alive',ts:new Date().toISOString()});
@@ -39,13 +47,18 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const action = body.action;
-    if (action === 'save')         return ok(saveApt(body.apt));
-    if (action === 'updateStatus') return ok(updateStatus(body.code, body.status));
-    if (action === 'reschedule')   return ok(rescheduleApt(body.code, body.date, body.time));
-    if (action === 'cancel')       return ok(cancelApt(body.code));
-    return err('Accion POST no reconocida: ' + action);
+    return handleAction(body);
   } catch(ex) { return err(ex.message); }
+}
+
+// ─── Lógica de acciones compartida por doGet y doPost ─────────────
+function handleAction(body) {
+  const action = body.action;
+  if (action === 'save')         return ok(saveApt(body.apt));
+  if (action === 'updateStatus') return ok(updateStatus(body.code, body.status));
+  if (action === 'reschedule')   return ok(rescheduleApt(body.code, body.date, body.time));
+  if (action === 'cancel')       return ok(cancelApt(body.code));
+  return err('Accion no reconocida: ' + action);
 }
 
 // ─── Obtener todas las citas ──────────────────────────────────────
@@ -61,11 +74,13 @@ function getAllApts() {
 function notifyN8N(payload) {
   if (!N8N_WEBHOOK) return;
   try {
+    // deadline:10 evita que el webhook bloquee la respuesta al cliente más de 10 segundos
     UrlFetchApp.fetch(N8N_WEBHOOK, {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify(payload),
-      muteHttpExceptions: true
+      muteHttpExceptions: true,
+      deadline: 10
     });
   } catch(e) {
     Logger.log('N8N webhook error: ' + e.message);
