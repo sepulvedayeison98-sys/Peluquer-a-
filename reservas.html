@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Status Barber Studio — Reservas</title>
+<title>Reservar Cita — Barber Style · Medellín</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
@@ -273,11 +273,11 @@ nav {
 
 .hero-big-letter {
   font-family: 'Playfair Display', serif;
-  font-size: 280px; line-height: 1;
+  font-size: clamp(120px, 18vw, 220px); line-height: 1;
   color: transparent;
   -webkit-text-stroke: 1.5px var(--tan);
   font-weight: 700; user-select: none;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
 
 .hero-visual-tag {
@@ -785,7 +785,7 @@ footer {
 
 <!-- ── NAV ── -->
 <nav>
-  <a href="#" class="nav-logo">Status <em>Barber</em></a>
+  <a href="/" class="nav-logo">Barber <em>Style</em></a>
   <ul class="nav-links">
     <li><a href="#servicios">Servicios</a></li>
     <li><a href="#reservar">Reservar</a></li>
@@ -806,13 +806,13 @@ footer {
 <section class="hero">
   <div class="hero-content">
     <p class="hero-kicker">Barbería de élite · Medellín</p>
-    <h1 class="hero-title">Status<br><em>Barber</em><br>Studio</h1>
+    <h1 class="hero-title">Barber<br><em>Style</em></h1>
     <p class="hero-sub">Since 2023</p>
     <a href="#servicios" class="hero-cta">Ver servicios</a>
   </div>
   <div class="hero-visual">
     <div class="hero-visual-inner">
-      <div class="hero-big-letter">S</div>
+      <div class="hero-big-letter">BS</div>
       <p class="hero-visual-tag">Est. 2023 · Medellín</p>
     </div>
   </div>
@@ -1011,7 +1011,7 @@ footer {
   <div class="success" id="successScreen">
     <div class="success-mark">✓</div>
     <h2>¡Cita confirmada!</h2>
-    <p>Tu reserva ha sido registrada con éxito.<br>Te esperamos en Status Barber Studio.<br>Carrera 55 24A-06, Medellín, Bello.</p>
+    <p>Tu reserva ha sido registrada con éxito.<br>Te esperamos en Barber Style.<br>Carrera 55 24A-06, Medellín, Bello.</p>
     <div class="conf-badge" id="confCode">—</div>
     <br><br>
     <a href="#servicios" class="hero-cta" style="margin:0 auto;" onclick="resetForm()">Nueva reserva</a>
@@ -1067,10 +1067,10 @@ footer {
 <div class="toast" id="clientToast"></div>
 <!-- ── FOOTER ── -->
 <footer>
-  <div class="ft-brand">Status <em>Barber</em> Studio</div>
+  <div class="ft-brand">Barber <em>Style</em></div>
   <div class="ft-info">
     Carrera 55 24A-06 · Medellín, Bello<br>
-    07:00 AM – 07:00 PM · Since 2023
+    07:00 AM – 07:00 PM · <a href="mailto:barbero@barberstyle.co" style="color:var(--gold);text-decoration:none;">barbero@barberstyle.co</a>
   </div>
 </footer>
 
