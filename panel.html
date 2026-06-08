@@ -858,8 +858,18 @@ function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart
 function fmtDisplay(ds){const[y,m,d]=ds.split('-');return `${d} de ${MONTHS[parseInt(m)-1]} ${y}`}
 
 /* ── BACKEND (Google Apps Script) ── */
-// Pega aquí la URL después de desplegar el script
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
+const N8N_WEBHOOK = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
+
+async function notifyN8N(action, apt, extra) {
+  try {
+    await fetch(N8N_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, apt, ...extra })
+    });
+  } catch(e) { console.warn('N8N error:', e.message); }
+}
 
 async function backendPost(payload) {
   if (!BACKEND_URL) return null;
@@ -1230,7 +1240,8 @@ function cancelByBarber(id){
   const a = appointments.find(x=>x.id===id); if(!a) return;
   if(!confirm(`¿Cancelar la cita de ${a.name}? Se notificará al cliente.`)) return;
   a.status='cancelled'; persistApts();
-  backendPost({ action:'cancel', code:a.code }); // guarda en Sheets + dispara N8N → correo
+  backendPost({ action:'cancel', code:a.code });
+  notifyN8N('cancel', a); → correo
   closeModal(); renderDashTable(); renderMiniCal();
   showAdminToast(`Cita de ${a.name} cancelada. Cliente notificado.`, 'warning');
 }
@@ -1241,7 +1252,8 @@ function changeStatusNotify(id, newStatus){
   const a = appointments.find(x=>x.id===id); if(!a) return;
   a.status = newStatus;
   persistApts();
-  backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // Sheets + N8N
+  backendPost({ action:'updateStatus', code:a.code, status:newStatus });
+  notifyN8N('updateStatus', a, { status: newStatus });
   if(newStatus==='confirmed'){
     showAdminToast(`Cita de ${a.name} confirmada. Cliente notificado.`, 'success');
   }
@@ -1490,7 +1502,8 @@ function confirmReschedBarber(){
   const oldDate=a.date, oldTime=a.time;
   a.date=newDate; a.time=newTime; a.status='rescheduled'; a.motivo=motivo;persistApts();
 
-  backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime }); // Sheets + N8N
+  backendPost({ action:'reschedule', code:a.code, date:newDate, time:newTime });
+  notifyN8N('reschedule', a, { date: newDate, time: newTime });
 
   closeReschedBarber();
   renderDashTable(); renderMiniCal();
