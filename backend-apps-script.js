@@ -60,10 +60,13 @@ function doPost(e) {
 // ─── Lógica de acciones compartida por doGet y doPost ─────────────
 function handleAction(body) {
   const action = body.action;
-  if (action === 'save')         return ok(saveApt(body.apt));
-  if (action === 'updateStatus') return ok(updateStatus(body.code, body.status));
-  if (action === 'reschedule')   return ok(rescheduleApt(body.code, body.date, body.time));
-  if (action === 'cancel')       return ok(cancelApt(body.code));
+  if (action === 'save')           return ok(saveApt(body.apt));
+  if (action === 'updateStatus')   return ok(updateStatus(body.code, body.status));
+  if (action === 'reschedule')     return ok(rescheduleApt(body.code, body.date, body.time));
+  if (action === 'cancel')         return ok(cancelApt(body.code));
+  if (action === 'verifyLogin')    return ok(verifyLogin(body.pass));
+  if (action === 'changePassword') return ok(changePassword(body.currentPass, body.newPass));
+  if (action === 'clearOld')       return ok(clearOldApts(body.days));
   return err('Accion no reconocida: ' + action);
 }
 
@@ -265,6 +268,78 @@ function sendRescheduleToClient(apt, newDate, newTime) {
     htmlBody: html,
     name: BUSINESS_NAME
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ─── AUTENTICACIÓN ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+
+// Contraseña maestra hardcodeada (fallback si no hay clave en PropertiesService)
+const DEFAULT_PASS = 'bs2025*';
+const PASS_KEY     = 'PANEL_PASSWORD';
+
+function getStoredPass() {
+  const props = PropertiesService.getScriptProperties();
+  return props.getProperty(PASS_KEY) || DEFAULT_PASS;
+}
+
+function verifyLogin(pass) {
+  if (!pass) return { valid: false };
+  return { valid: pass === getStoredPass() };
+}
+
+function changePassword(currentPass, newPass) {
+  if (!currentPass || !newPass) throw new Error('Faltan parámetros');
+  if (newPass.length < 6)       throw new Error('La contraseña debe tener al menos 6 caracteres');
+  if (currentPass !== getStoredPass()) throw new Error('Contraseña actual incorrecta');
+
+  // Guardar nueva contraseña en PropertiesService (servidor, no visible en código)
+  PropertiesService.getScriptProperties().setProperty(PASS_KEY, newPass);
+
+  // Notificar al propietario por correo
+  const html = emailBase(
+    '<h2 style="margin:0 0 16px;font-size:18px;color:#c9a96e;font-weight:400;">🔐 Contraseña actualizada</h2>' +
+    '<p style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.7;margin:0 0 20px;">La contraseña de acceso al panel de <strong style="color:#fff;">' + BUSINESS_NAME + '</strong> fue cambiada exitosamente.</p>' +
+    '<p style="color:rgba(255,255,255,.5);font-size:12px;line-height:1.6;margin:0;">Si no realizaste este cambio, actualiza la contraseña de inmediato desde el panel en Configuración.</p>'
+  );
+  MailApp.sendEmail({
+    to: BARBERO_EMAIL,
+    subject: '🔐 Contraseña del panel actualizada — ' + BUSINESS_NAME,
+    htmlBody: html,
+    name: BUSINESS_NAME
+  });
+
+  return { changed: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ─── LIMPIEZA DE CITAS ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+
+function clearOldApts(days) {
+  if (!days || isNaN(days) || days < 1) throw new Error('Número de días inválido');
+  const sheet   = getSheet();
+  const last    = sheet.getLastRow();
+  if (last < 2)  return { deleted: 0 };
+
+  const tz      = Session.getScriptTimeZone();
+  const cutoff  = new Date();
+  cutoff.setDate(cutoff.getDate() - Number(days));
+  const cutoffStr = Utilities.formatDate(cutoff, tz, 'yyyy-MM-dd');
+
+  // Recorrer de abajo hacia arriba para no desfasar índices al borrar
+  let deleted = 0;
+  for (let r = last; r >= 2; r--) {
+    const dateVal = sheet.getRange(r, COL.date).getValue();
+    const dateStr = dateVal instanceof Date
+      ? Utilities.formatDate(dateVal, tz, 'yyyy-MM-dd')
+      : String(dateVal || '');
+    if (dateStr && dateStr < cutoffStr) {
+      sheet.deleteRow(r);
+      deleted++;
+    }
+  }
+  return { deleted, cutoff: cutoffStr };
 }
 
 // ═══════════════════════════════════════════════════════════════════

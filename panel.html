@@ -562,6 +562,10 @@ body.locked{overflow:hidden}
     <a class="sb-link" onclick="showPage('ingresos',this)">
       <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Ingresos
     </a>
+    <div class="sb-section-label" style="margin-top:auto;padding-top:24px;opacity:.4">Sistema</div>
+    <a class="sb-link" onclick="showPage('configuracion',this)" style="opacity:.55;font-size:10px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.55'">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configuración
+    </a>
   </nav>
   <div class="sb-footer">
     <div class="sb-user">
@@ -764,6 +768,53 @@ body.locked{overflow:hidden}
         <div class="card-head"><div class="card-head-title">Servicios más <em>solicitados</em></div></div>
         <div class="svc-rank-list" id="svcRank"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONFIGURACIÓN ═══ -->
+  <div class="content" id="page-configuracion">
+    <div style="max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+
+      <!-- Cambiar contraseña -->
+      <div class="card">
+        <div class="card-head"><div class="card-head-title">Cambiar <em>contraseña</em></div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div class="nf-field">
+            <label class="nf-label">Contraseña actual</label>
+            <input class="nf-input" type="password" id="cfgPassActual" placeholder="••••••••">
+          </div>
+          <div class="nf-field">
+            <label class="nf-label">Nueva contraseña</label>
+            <input class="nf-input" type="password" id="cfgPassNueva" placeholder="Mín. 6 caracteres">
+          </div>
+          <div class="nf-field">
+            <label class="nf-label">Confirmar nueva contraseña</label>
+            <input class="nf-input" type="password" id="cfgPassConfirm" placeholder="Repite la nueva contraseña">
+          </div>
+          <div id="cfgPassMsg" style="font-size:12px;min-height:18px;color:var(--rose);display:none;"></div>
+          <button class="topbar-btn" onclick="cfgChangePass()" style="align-self:flex-start;">Actualizar contraseña</button>
+        </div>
+      </div>
+
+      <!-- Borrar citas antiguas -->
+      <div class="card">
+        <div class="card-head"><div class="card-head-title">Limpiar <em>agenda</em></div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <p style="font-size:12px;color:var(--muted);margin:0;line-height:1.6;">Elimina permanentemente las citas anteriores a los últimos <strong>N días</strong>. Esta acción no se puede deshacer.</p>
+          <div class="nf-field" style="max-width:180px;">
+            <label class="nf-label">Borrar citas anteriores a</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input class="nf-input" type="number" id="cfgDias" min="1" max="365" value="30" style="width:90px;">
+              <span style="font-size:12px;color:var(--muted);">días</span>
+            </div>
+          </div>
+          <div id="cfgClearMsg" style="font-size:12px;min-height:18px;color:var(--rose);display:none;"></div>
+          <button onclick="cfgClearOld()" style="align-self:flex-start;padding:8px 20px;background:transparent;border:1px solid var(--rose);color:var(--rose);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:4px;" onmouseover="this.style.background='var(--rose)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--rose)'">
+            Borrar citas antiguas
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1025,7 +1076,7 @@ function showPage(id,el){
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el) el.classList.add('active');
-  const titles={dashboard:'Dashboard',citas:'Citas',horario:'Horario',ingresos:'Ingresos'};
+  const titles={dashboard:'Dashboard',citas:'Citas',horario:'Horario',ingresos:'Ingresos',configuracion:'Configuración'};
   document.getElementById('topbarTitle').textContent=titles[id]||id;
   if(id==='dashboard') renderKPIs();
   if(id==='citas')    renderCitasTable();
@@ -1722,6 +1773,63 @@ window.addEventListener('storage', function(e){
     renderCitasTable();
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// ─── CONFIGURACIÓN ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+
+function cfgMsg(id, msg, isOk) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.color  = isOk ? 'var(--green, #4caf81)' : 'var(--rose)';
+  el.style.display = 'block';
+  if (isOk) setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function cfgChangePass() {
+  const actual   = document.getElementById('cfgPassActual').value.trim();
+  const nueva    = document.getElementById('cfgPassNueva').value.trim();
+  const confirm  = document.getElementById('cfgPassConfirm').value.trim();
+  if (!actual || !nueva || !confirm) return cfgMsg('cfgPassMsg','Completa todos los campos');
+  if (nueva.length < 6)              return cfgMsg('cfgPassMsg','La contraseña debe tener al menos 6 caracteres');
+  if (nueva !== confirm)             return cfgMsg('cfgPassMsg','Las contraseñas no coinciden');
+
+  backendPost({ action: 'changePassword', currentPass: actual, newPass: nueva })
+    .then(r => {
+      if (r && r.ok) {
+        cfgMsg('cfgPassMsg','✓ Contraseña actualizada. Recibirás un correo de confirmación.', true);
+        document.getElementById('cfgPassActual').value = '';
+        document.getElementById('cfgPassNueva').value  = '';
+        document.getElementById('cfgPassConfirm').value= '';
+        // Actualizar la sesión con la nueva contraseña en AUTH (para que logout/login funcione)
+        AUTH.pass = nueva;
+      } else {
+        cfgMsg('cfgPassMsg', (r && r.error) || 'Error al cambiar la contraseña');
+      }
+    })
+    .catch(() => cfgMsg('cfgPassMsg','Error de conexión con el servidor'));
+}
+
+function cfgClearOld() {
+  const dias = parseInt(document.getElementById('cfgDias').value);
+  if (!dias || dias < 1) return cfgMsg('cfgClearMsg','Ingresa un número de días válido');
+
+  const confirmMsg = `¿Borrar todas las citas anteriores a los últimos ${dias} días?\n\nEsta acción es permanente y no se puede deshacer.`;
+  if (!confirm(confirmMsg)) return;
+
+  backendPost({ action: 'clearOld', days: dias })
+    .then(r => {
+      if (r && r.ok) {
+        const n = r.data && r.data.deleted !== undefined ? r.data.deleted : '?';
+        cfgMsg('cfgClearMsg', `✓ Se eliminaron ${n} citas anteriores al ${r.data && r.data.cutoff || ''}.`, true);
+        // Refrescar vista local
+        syncFromBackend();
+      } else {
+        cfgMsg('cfgClearMsg', (r && r.error) || 'Error al borrar citas');
+      }
+    })
+    .catch(() => cfgMsg('cfgClearMsg','Error de conexión con el servidor'));
+}
 </script>
 
 </body>
