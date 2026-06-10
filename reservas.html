@@ -1258,7 +1258,7 @@ function notify(msg) {
 }
 
 /* REVEAL */
-const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting) e.target.classList.add('in');}),{threshold:0.08});
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting) e.target.classList.add('in');}),{threshold:0.05, rootMargin:'0px 0px -20px 0px'});
 document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
 
 drawCal(); sync();
@@ -1466,6 +1466,9 @@ function initFromConfig() {
       <div class="${s.chip ? 'svc-chip' : ''}">${s.chip || ''}</div>
       <div class="svc-price">$${s.price.toLocaleString('es-CO')}<small>COP</small></div>
     </div>`).join('');
+
+  // Observar las filas nuevas para el reveal (se crean después del observer inicial)
+  document.querySelectorAll('.svc-row.rv').forEach(el => obs.observe(el));
 
   // Re-asignar listeners de servicios (se pierden al reemplazar innerHTML)
   document.querySelectorAll('.svc-row').forEach(row => {
