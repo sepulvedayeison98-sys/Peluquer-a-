@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barber Style — Panel del Barbero</title>
+<title id="panelTitle">Panel del Administrador</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Jost:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -519,8 +519,8 @@ body.locked{overflow:hidden}
 <div id="loginScreen" style="display:flex;">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-logo-main">Barber <em>Style</em></div>
-      <div class="login-logo-sub">Panel del barbero</div>
+      <div class="login-logo-main" id="loginLogoMain"></div>
+      <div class="login-logo-sub" id="loginLogoSub"></div>
     </div>
     <div class="login-divider"></div>
 
@@ -544,8 +544,8 @@ body.locked{overflow:hidden}
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
-    <div class="sb-brand-name">Barber <em>Style</em></div>
-    <div class="sb-brand-sub">Panel del barbero</div>
+    <div class="sb-brand-name" id="sidebarBrandName"></div>
+    <div class="sb-brand-sub" id="sidebarBrandSub"></div>
   </div>
   <nav class="sb-nav">
     <div class="sb-section-label">Principal</div>
@@ -567,8 +567,8 @@ body.locked{overflow:hidden}
     <div class="sb-user">
       <div class="sb-avatar">S</div>
       <div>
-        <div class="sb-user-name">Barbero</div>
-        <div class="sb-user-role">Status Studio</div>
+        <div class="sb-user-name" id="sidebarUserName"></div>
+        <div class="sb-user-role" id="sidebarUserRole"></div>
       </div>
     </div>
     <button onclick="logout()" style="margin-top:14px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='rgba(184,150,90,.4)';this.style.color='rgba(184,150,90,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.3)'">
@@ -791,14 +791,7 @@ body.locked{overflow:hidden}
       <div class="nf-field wide"><label class="nf-label">Servicio</label>
         <select class="nf-input" id="nfServicio">
           <option value="">Seleccionar servicio</option>
-          <option value="Barba o Afeitada|18000|30 min">Barba o Afeitada — $18.000</option>
-          <option value="Corte solo|25000|30 min">Corte solo — $25.000</option>
-          <option value="Corte + Afeitada|38000|50 min">Corte + Afeitada — $38.000</option>
-          <option value="Corte + Barba|42000|60 min">Corte + Barba — $42.000</option>
-          <option value="Corte + Barba + Cejas|44000|60 min">Corte + Barba + Cejas — $44.000</option>
-          <option value="Corte + Cejas|30000|40 min">Corte + Cejas — $30.000</option>
-          <option value="Marcación de cejas|8000|10 min">Marcación de cejas — $8.000</option>
-          <option value="Marcación de contornos|10000|10 min">Marcación de contornos — $10.000</option>
+          <!-- Opciones generadas dinámicamente desde config.js -->
         </select>
       </div>
       <div class="nf-field wide"><label class="nf-label">Notas</label><input class="nf-input" type="text" id="nfNotas" placeholder="Referencia, diseño..."></div>
@@ -848,6 +841,7 @@ body.locked{overflow:hidden}
 
 
 
+<script src="config.js"></script>
 <script>
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -857,9 +851,9 @@ const todayStr=fmtDate(TODAY);
 function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmtDisplay(ds){const[y,m,d]=ds.split('-');return `${d} de ${MONTHS[parseInt(m)-1]} ${y}`}
 
-/* ── BACKEND (Google Apps Script) ── */
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
-const N8N_WEBHOOK = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
+/* ── BACKEND — proviene de config.js ── */
+const BACKEND_URL = BUSINESS_CONFIG.backendUrl;
+const N8N_WEBHOOK = BUSINESS_CONFIG.n8nWebhook;
 
 async function notifyN8N(action, apt, extra) {
   try {
@@ -914,7 +908,7 @@ async function syncFromBackend() {
 }
 
 /* ── SHARED STORAGE with client app ── */
-const SBS_KEY='sbs_appointments';
+const SBS_KEY = BUSINESS_CONFIG.prefix + '_appointments';
 function loadApts(){
   try{
     const raw=JSON.parse(localStorage.getItem(SBS_KEY)||'[]');
@@ -1592,11 +1586,11 @@ function showAdminToast(msg, type=''){
    Cambia USER y PASS antes de subir a GitHub
 ══════════════════════════════════════ */
 const AUTH = {
-  USER: 'barberstyle',
-  PASS: 'bs2025*',
-  MAX_ATTEMPTS: 5,
+  USER:            BUSINESS_CONFIG.panel.user,
+  PASS:            BUSINESS_CONFIG.panel.pass,
+  MAX_ATTEMPTS:    5,
   LOCKOUT_MINUTES: 15,
-  SESSION_KEY: 'bs_admin_v2'   // clave nueva invalida sesiones anteriores
+  SESSION_KEY:     BUSINESS_CONFIG.panel.sessionKey
 };
 
 let loginAttempts = 0;
@@ -1675,7 +1669,34 @@ function logout() {
   location.reload();
 }
 
+/* ── INIT PANEL FROM CONFIG ─────────────────────────────────────── */
+function initPanelFromConfig() {
+  const C = BUSINESS_CONFIG;
+  const emp = C.employees && C.employees[0] ? C.employees[0] : { name: 'Admin', role: C.type };
+
+  document.getElementById('panelTitle').textContent = `${C.name} — Panel`;
+  document.getElementById('loginLogoMain').innerHTML = C.name.replace(/(\S+)$/, '<em>$1</em>');
+  document.getElementById('loginLogoSub').textContent = `Panel del ${C.type.toLowerCase()}`;
+  document.getElementById('sidebarBrandName').innerHTML = C.name.replace(/(\S+)$/, '<em>$1</em>');
+  document.getElementById('sidebarBrandSub').textContent = `Panel del ${C.type.toLowerCase()}`;
+  document.getElementById('sidebarUserName').textContent = emp.name;
+  document.getElementById('sidebarUserRole').textContent = emp.role || C.name;
+
+  // Poblar select de servicios en "Nueva Cita"
+  const sel = document.getElementById('nfServicio');
+  if (sel) {
+    sel.innerHTML = '<option value="">Seleccionar servicio</option>';
+    C.services.filter(s => s.active !== false).forEach(s => {
+      const o = document.createElement('option');
+      o.value = `${s.name}|${s.price}|${s.duration} min`;
+      o.textContent = `${s.name} — $${s.price.toLocaleString('es-CO')}`;
+      sel.appendChild(o);
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+  initPanelFromConfig();
   checkSession();
   renderDashTable();
   renderMiniCal();

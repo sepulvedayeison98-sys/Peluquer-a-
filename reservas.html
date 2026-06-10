@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reservar Cita — Barber Style · Medellín</title>
+<title id="pageTitle">Reservar Cita</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
@@ -785,7 +785,7 @@ footer {
 
 <!-- ── NAV ── -->
 <nav>
-  <a href="/" class="nav-logo">Barber <em>Style</em></a>
+  <a href="/" class="nav-logo" id="navLogo"></a>
   <ul class="nav-links">
     <li><a href="#servicios">Servicios</a></li>
     <li><a href="#reservar">Reservar</a></li>
@@ -805,15 +805,15 @@ footer {
 <!-- ── HERO ── -->
 <section class="hero">
   <div class="hero-content">
-    <p class="hero-kicker">Barbería de élite · Medellín</p>
-    <h1 class="hero-title">Barber<br><em>Style</em></h1>
-    <p class="hero-sub">Since 2023</p>
+    <p class="hero-kicker" id="heroKicker"></p>
+    <h1 class="hero-title" id="heroTitle"></h1>
+    <p class="hero-sub" id="heroSub"></p>
     <a href="#servicios" class="hero-cta">Ver servicios</a>
   </div>
   <div class="hero-visual">
     <div class="hero-visual-inner">
-      <div class="hero-big-letter">BS</div>
-      <p class="hero-visual-tag">Est. 2023 · Medellín</p>
+      <div class="hero-big-letter" id="heroMonogram"></div>
+      <p class="hero-visual-tag" id="heroTag"></p>
     </div>
   </div>
 </section>
@@ -822,15 +822,15 @@ footer {
 <div class="info-strip">
   <div class="info-item">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    07:00 AM — 07:00 PM
+    <span id="infoSchedule"></span>
   </div>
   <div class="info-item">
     <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Carrera 55 24A-06, Medellín
+    <span id="infoAddress"></span>
   </div>
   <div class="info-item">
     <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    5.0 · 218 reseñas
+    <span id="infoReviews"></span>
   </div>
   <div class="info-item">
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -843,89 +843,7 @@ footer {
   <p class="s-label rv">Catálogo completo</p>
   <h2 class="s-title rv">Nuestros <em>servicios</em></h2>
 
-  <div class="svc-list">
-
-    <div class="svc-row rv" data-svc="Barba o Afeitada" data-price="18000" data-dur="30 min">
-      <span class="svc-num">01</span>
-      <div>
-        <div class="svc-name">Barba o Afeitada</div>
-        <div class="svc-dur">30 min</div>
-      </div>
-      <div class="svc-chip">Popular</div>
-      <div class="svc-price">$18.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Corte solo" data-price="25000" data-dur="30 min">
-      <span class="svc-num">02</span>
-      <div>
-        <div class="svc-name">Corte solo</div>
-        <div class="svc-dur">30 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$25.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Corte + Afeitada" data-price="38000" data-dur="50 min">
-      <span class="svc-num">03</span>
-      <div>
-        <div class="svc-name">Corte + Afeitada</div>
-        <div class="svc-dur">50 min · Rasurada completa</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$38.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Corte + Barba" data-price="42000" data-dur="60 min">
-      <span class="svc-num">04</span>
-      <div>
-        <div class="svc-name">Corte + Barba</div>
-        <div class="svc-dur">60 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$42.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Corte + Barba + Cejas" data-price="44000" data-dur="60 min">
-      <span class="svc-num">05</span>
-      <div>
-        <div class="svc-name">Corte + Barba + Cejas</div>
-        <div class="svc-dur">60 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$44.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Corte + Cejas" data-price="30000" data-dur="40 min">
-      <span class="svc-num">06</span>
-      <div>
-        <div class="svc-name">Corte + Cejas</div>
-        <div class="svc-dur">40 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$30.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Marcación de cejas" data-price="8000" data-dur="10 min">
-      <span class="svc-num">07</span>
-      <div>
-        <div class="svc-name">Marcación de cejas</div>
-        <div class="svc-dur">10 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$8.000<small>COP</small></div>
-    </div>
-
-    <div class="svc-row rv" data-svc="Marcación de contornos" data-price="10000" data-dur="10 min">
-      <span class="svc-num">08</span>
-      <div>
-        <div class="svc-name">Marcación de contornos</div>
-        <div class="svc-dur">10 min</div>
-      </div>
-      <div></div>
-      <div class="svc-price">$10.000<small>COP</small></div>
-    </div>
-
-  </div>
+  <div class="svc-list" id="svcList"></div>
 </section>
 
 <!-- ── RESERVAR ── -->
@@ -1011,7 +929,7 @@ footer {
   <div class="success" id="successScreen">
     <div class="success-mark">✓</div>
     <h2>¡Cita confirmada!</h2>
-    <p>Tu reserva ha sido registrada con éxito.<br>Te esperamos en Barber Style.<br>Carrera 55 24A-06, Medellín, Bello.</p>
+    <p id="successMsg"></p>
     <div class="conf-badge" id="confCode">—</div>
     <br><br>
     <a href="#servicios" class="hero-cta" style="margin:0 auto;" onclick="resetForm()">Nueva reserva</a>
@@ -1023,7 +941,7 @@ footer {
   <p class="s-label rv">Gestión</p>
   <h2 class="s-title rv">Mis <em>citas</em></h2>
   <div class="lookup-form rv">
-    <input class="lookup-input" type="text" id="lookupCode" placeholder="Código de reserva (ej: SBS-AB1C2D)">
+    <input class="lookup-input" type="text" id="lookupCode" placeholder="Código de reserva">
     <input class="lookup-input" type="email" id="lookupEmail" placeholder="Tu correo electrónico" style="max-width:260px;">
     <button class="lookup-btn" onclick="lookupApt()">Buscar cita</button>
   </div>
@@ -1067,13 +985,11 @@ footer {
 <div class="toast" id="clientToast"></div>
 <!-- ── FOOTER ── -->
 <footer>
-  <div class="ft-brand">Barber <em>Style</em></div>
-  <div class="ft-info">
-    Carrera 55 24A-06 · Medellín, Bello<br>
-    07:00 AM – 07:00 PM · <a href="mailto:barbero@barberstyle.co" style="color:var(--gold);text-decoration:none;">barbero@barberstyle.co</a>
-  </div>
+  <div class="ft-brand" id="footerBrand"></div>
+  <div class="ft-info" id="footerInfo"></div>
 </footer>
 
+<script src="config.js"></script>
 <script>
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
@@ -1082,9 +998,9 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// ── BACKEND (Google Apps Script) ──────────────────────────────────
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyo12J2gDyy9-6m75IOTpnYsvdACKHw63WrlEmfkxOpwOgRRCseIZWr1KlwTb-SQhRyMg/exec';
-const N8N_WEBHOOK = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
+// ── BACKEND — proviene de config.js ───────────────────────────────
+const BACKEND_URL = BUSINESS_CONFIG.backendUrl;
+const N8N_WEBHOOK = BUSINESS_CONFIG.n8nWebhook;
 
 // Llama a N8N directamente desde el navegador (sin pasar por Apps Script)
 async function notifyN8N(action, apt, extra) {
@@ -1279,7 +1195,7 @@ function ready() {
 ['fNombre','fTel','fEmail'].forEach(id=>document.getElementById(id).addEventListener('input',ready));
 
 /* ── STORAGE shared with admin ── */
-const SBS_KEY='sbs_appointments';
+const SBS_KEY = BUSINESS_CONFIG.prefix + '_appointments';
 function getStoredApts(){try{return JSON.parse(localStorage.getItem(SBS_KEY)||'[]');}catch(e){return[];}}
 function saveStoredApts(a){localStorage.setItem(SBS_KEY,JSON.stringify(a));}
 function fmtDisp(ds){if(!ds)return'—';const[y,m,d]=ds.split('-');return d+' de '+MONTHS[parseInt(m)-1]+' '+y;}
@@ -1296,7 +1212,7 @@ document.getElementById('bookBtn').addEventListener('click', async ()=>{
   const btn=document.getElementById('bookBtn');
   btn.disabled=true; btn.textContent='Guardando…';
 
-  const code='SBS-'+Math.random().toString(36).substr(2,6).toUpperCase();
+  const code=BUSINESS_CONFIG.codePrefix+Math.random().toString(36).substr(2,6).toUpperCase();
   const apt={code,name:nombre,email,tel,notes:notas,svc:st.svc,price:st.price,dur:st.dur,date:st.date,time:st.time,status:'pending',createdAt:new Date().toISOString()};
 
   // 1. Guardar en localStorage (inmediato, funciona offline)
@@ -1498,11 +1414,84 @@ function showToastClient(msg,type){
 }
 
 /* ── NOTIFICATIONS ── */
-// Las notificaciones (email/WhatsApp) son disparadas automáticamente
-// por el Apps Script backend cuando guarda la cita en Google Sheets → N8N.
-function sendNotification(payload){
-  console.log('[SBS Notif]', payload.trigger, payload);
+function sendNotification(payload){ console.log('[Notif]', payload.trigger, payload); }
+
+/* ── INIT FROM CONFIG ─────────────────────────────────────────────
+   Rellena todo el HTML con los datos de config.js
+   Para personalizar: edita BUSINESS_CONFIG en config.js
+─────────────────────────────────────────────────────────────────── */
+function initFromConfig() {
+  const C = BUSINESS_CONFIG;
+
+  // Título de la página
+  document.getElementById('pageTitle').textContent =
+    `Reservar Cita — ${C.name} · ${C.city}`;
+
+  // Nav logo
+  document.getElementById('navLogo').innerHTML =
+    C.name.includes(' ') ? C.name.replace(' ','<br>').replace(/(\S+)$/, '<em>$1</em>') : C.name;
+
+  // Hero
+  document.getElementById('heroKicker').textContent   = `${C.tagline} · ${C.city}`;
+  document.getElementById('heroTitle').innerHTML      = C.name.replace(/(\S+)$/, '<br><em>$1</em>');
+  document.getElementById('heroSub').textContent      = C.slogan;
+  document.getElementById('heroMonogram').textContent = C.monogram;
+  document.getElementById('heroTag').textContent      = `Est. ${C.established} · ${C.city}`;
+
+  // Info strip
+  document.getElementById('infoSchedule').textContent = C.schedule.label;
+  document.getElementById('infoAddress').textContent  = `${C.address}, ${C.city}`;
+  document.getElementById('infoReviews').textContent  = `${C.reviews.score} · ${C.reviews.count}`;
+
+  // Mensaje de éxito al reservar
+  document.getElementById('successMsg').innerHTML =
+    `Tu reserva ha sido registrada con éxito.<br>Te esperamos en ${C.name}.<br>${C.address}, ${C.city}.`;
+
+  // Footer
+  document.getElementById('footerBrand').innerHTML = C.name.replace(/(\S+)$/, '<em>$1</em>');
+  document.getElementById('footerInfo').innerHTML  =
+    `${C.address} · ${C.city}<br>${C.schedule.label} · ` +
+    `<a href="mailto:${C.email}" style="color:var(--gold);text-decoration:none;">${C.email}</a>`;
+
+  // Servicios dinámicos
+  const svcList = document.getElementById('svcList');
+  const active  = C.services.filter(s => s.active !== false);
+  svcList.innerHTML = active.map((s, i) => `
+    <div class="svc-row rv" data-svc="${s.name}" data-price="${s.price}" data-dur="${s.duration} min">
+      <span class="svc-num">${String(i+1).padStart(2,'0')}</span>
+      <div>
+        <div class="svc-name">${s.name}</div>
+        <div class="svc-dur">${s.duration} min</div>
+      </div>
+      <div class="${s.chip ? 'svc-chip' : ''}">${s.chip || ''}</div>
+      <div class="svc-price">$${s.price.toLocaleString('es-CO')}<small>COP</small></div>
+    </div>`).join('');
+
+  // Re-asignar listeners de servicios (se pierden al reemplazar innerHTML)
+  document.querySelectorAll('.svc-row').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.svc-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      st.svc   = row.dataset.svc;
+      st.price = Number(row.dataset.price);
+      st.dur   = row.dataset.dur;
+      document.getElementById('stickyText').textContent =
+        `${st.svc} · $${st.price.toLocaleString('es-CO')} COP`;
+      document.getElementById('stickyBar').classList.add('show');
+      drawSlots();
+      ready();
+    });
+  });
+
+  // Colores desde config
+  const r = document.documentElement.style;
+  r.setProperty('--gold',    C.colors.primary);
+  r.setProperty('--gold2',   C.colors.secondary || C.colors.primary);
+  r.setProperty('--gold-lt', C.colors.accent);
 }
+
+// Ejecutar al cargar
+document.addEventListener('DOMContentLoaded', initFromConfig);
 
 </script>
 </body>

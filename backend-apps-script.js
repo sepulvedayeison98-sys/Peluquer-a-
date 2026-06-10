@@ -1,15 +1,21 @@
-/**
- * BARBER STYLE — Google Apps Script Backend
+﻿/**
+ * WHITE LABEL — Google Apps Script Backend
  * Despliega como Web App → Acceso: Cualquier persona
+ *
+ * ⚙️  CONFIGURACIÓN POR CLIENTE — edita solo estas 3 constantes:
+ *    BUSINESS_NAME  → nombre del negocio (usado en emails)
+ *    BARBERO_EMAIL  → correo que recibe notificaciones
+ *    N8N_WEBHOOK    → URL del webhook de N8N del cliente
  *
  * COLUMNAS de la hoja "Citas":
  * A:id  B:code  C:name  D:email  E:tel  F:svc  G:price
  * H:dur  I:date  J:time  K:status  L:notes  M:createdAt
  */
 
+const BUSINESS_NAME = 'Barber Style';          // ← nombre del negocio
 const SHEET_NAME    = 'Citas';
-const BARBERO_EMAIL = 'sepulvedayeison98@gmail.com'; // ← cambiar a barbero@barberstyle.co cuando tengas el dominio
-const N8N_WEBHOOK   = 'https://kodrefe.app.n8n.cloud/webhook/barber-style';
+const BARBERO_EMAIL = 'sepulvedayeison98@gmail.com'; // ← correo del negocio
+const N8N_WEBHOOK   = 'https://kodrefe.app.n8n.cloud/webhook/barber-style'; // ← webhook N8N
 const COL = {
   id:1, code:2, name:3, email:4, tel:5, svc:6,
   price:7, dur:8, date:9, time:10, status:11, notes:12, createdAt:13
@@ -152,11 +158,11 @@ function emailBase(contenido) {
     '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0eb;padding:40px 20px;">' +
     '<tr><td align="center"><table width="520" cellpadding="0" cellspacing="0" style="background:#0a0806;border-radius:4px;overflow:hidden;">' +
     '<tr><td style="background:#1a1410;padding:28px 40px;text-align:center;border-bottom:1px solid rgba(201,169,110,.2);">' +
-    '<span style="font-family:Georgia,serif;font-size:28px;color:#c9a96e;letter-spacing:4px;font-style:italic;">Barber Style</span>' +
+    '<span style="font-family:Georgia,serif;font-size:28px;color:#c9a96e;letter-spacing:4px;font-style:italic;">' + BUSINESS_NAME + '</span>' +
     '</td></tr>' +
     '<tr><td style="padding:36px 40px;color:#fff;">' + contenido + '</td></tr>' +
     '<tr><td style="background:#1a1410;padding:20px 40px;text-align:center;border-top:1px solid rgba(201,169,110,.2);">' +
-    '<p style="margin:0;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.15em;text-transform:uppercase;">Barber Style · Tu barbería de confianza</p>' +
+    '<p style="margin:0;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.15em;text-transform:uppercase;">' + BUSINESS_NAME + '</p>' +
     '</td></tr>' +
     '</table></td></tr></table></body></html>';
 }
@@ -180,9 +186,9 @@ function sendConfirmationToClient(apt) {
 
   MailApp.sendEmail({
     to: apt.email,
-    subject: 'Cita confirmada — Barber Style · ' + fmtDateEs(apt.date),
+    subject: 'Cita confirmada — ' + BUSINESS_NAME + ' · ' + fmtDateEs(apt.date),
     htmlBody: html,
-    name: 'Barber Style'
+    name: BUSINESS_NAME
   });
 }
 
@@ -207,7 +213,7 @@ function sendNotificationToBarbero(apt) {
     to: BARBERO_EMAIL,
     subject: 'Nueva cita: ' + apt.name + ' — ' + fmtDateEs(apt.date) + ' ' + apt.time,
     htmlBody: html,
-    name: 'Barber Style'
+    name: BUSINESS_NAME
   });
 }
 
@@ -233,9 +239,9 @@ function sendStatusUpdateToClient(apt, nuevoEstado) {
 
   MailApp.sendEmail({
     to: apt.email,
-    subject: emoji + ' Tu cita fue ' + nuevoEstado + ' — Barber Style',
+    subject: emoji + ' Tu cita fue ' + nuevoEstado + ' — ' + BUSINESS_NAME,
     htmlBody: html,
-    name: 'Barber Style'
+    name: BUSINESS_NAME
   });
 }
 
@@ -255,9 +261,9 @@ function sendRescheduleToClient(apt, newDate, newTime) {
 
   MailApp.sendEmail({
     to: apt.email,
-    subject: '📅 Cita reagendada — Barber Style · ' + fmtDateEs(newDate),
+    subject: '📅 Cita reagendada — ' + BUSINESS_NAME + ' · ' + fmtDateEs(newDate),
     htmlBody: html,
-    name: 'Barber Style'
+    name: BUSINESS_NAME
   });
 }
 
@@ -271,7 +277,7 @@ function getSpreadsheet() {
   if (ssId) {
     try { return SpreadsheetApp.openById(ssId); } catch(e) {}
   }
-  const ss = SpreadsheetApp.create('Barber Style — Citas');
+  const ss = SpreadsheetApp.create(BUSINESS_NAME + ' — Citas');
   props.setProperty('SHEET_ID', ss.getId());
   return ss;
 }
@@ -322,3 +328,4 @@ function rowToObj(r) {
     price:Number(r[6])||0,dur:r[7],date:dateStr,time:timeStr,status:r[10],
     notes:r[11],createdAt:r[12]?new Date(r[12]).toISOString():''};
 }
+
