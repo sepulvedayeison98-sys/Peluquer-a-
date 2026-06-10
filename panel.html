@@ -1468,20 +1468,48 @@ function openReschedBarber(id){
     <div class="modal-row"><span class="mk">Servicio</span><span class="mv">${a.svc}</span></div>
     <div class="modal-row" style="border-bottom:1px solid var(--border);padding-bottom:12px"><span class="mk">Fecha actual</span><span class="mv">${fmtDisplay(a.date)} a las ${a.time}</span></div>`;
 
-  const sel=document.getElementById('bRschHora'); sel.innerHTML='<option value="">Seleccionar</option>';
-  for(let h=7;h<19;h++){['00','30'].forEach(m=>{const o=document.createElement('option');o.value=`${String(h).padStart(2,'0')}:${m}`;o.textContent=`${String(h).padStart(2,'0')}:${m}`;sel.appendChild(o);});}
-
   const tom=new Date(); tom.setDate(tom.getDate()+1);
   document.getElementById('bRschFecha').min=tom.toISOString().split('T')[0];
   document.getElementById('bRschFecha').value='';
   document.getElementById('bRschMotivo').value='';
   document.getElementById('reschedNotifPreview').innerHTML='';
+  fillRschedSlots('');
 
   // 🐛 fix: usar onchange inline para evitar acumulación de listeners en cada apertura
-  document.getElementById('bRschFecha').onchange = updateRschedPreview;
+  document.getElementById('bRschFecha').onchange = function(){ fillRschedSlots(this.value); updateRschedPreview(); };
   document.getElementById('bRschHora').onchange  = updateRschedPreview;
 
   document.getElementById('reschedBarberModal').classList.add('open');
+}
+
+function fillRschedSlots(date){
+  const sel = document.getElementById('bRschHora');
+  const a   = appointments.find(x=>x.id===bRschedId);
+  // Slots ocupados en esa fecha (excluyendo la cita actual)
+  const occupied = new Set(
+    appointments
+      .filter(x => x.date===date && x.code!==(a&&a.code) && x.status!=='cancelled')
+      .map(x => x.time)
+  );
+  // Bloquear horas pasadas si es hoy
+  const todayStr = new Date().toISOString().split('T')[0];
+  const nowMins  = date===todayStr ? new Date().getHours()*60+new Date().getMinutes()+30 : 0;
+
+  sel.innerHTML = '<option value="">Seleccionar hora</option>';
+  for(let h=7;h<19;h++){
+    ['00','30'].forEach(m=>{
+      const val  = `${String(h).padStart(2,'0')}:${m}`;
+      const mins = h*60+Number(m);
+      if(occupied.has(val) || mins < nowMins) return; // saltar slots ocupados/pasados
+      const o = document.createElement('option');
+      o.value = val; o.textContent = val;
+      sel.appendChild(o);
+    });
+  }
+  if(sel.options.length===1) {
+    const o=document.createElement('option'); o.disabled=true;
+    o.textContent='Sin horarios disponibles'; sel.appendChild(o);
+  }
 }
 
 function updateRschedPreview(){

@@ -1431,13 +1431,40 @@ function openReschedClient(code){
   document.getElementById('reschedModalContent').innerHTML=`
     <div class="modal-info-row"><span class="mk">Servicio</span><span class="mv">${a.svc}</span></div>
     <div class="modal-info-row"><span class="mk">Fecha actual</span><span class="mv">${fmtDisp(a.date)} a las ${a.time}</span></div>`;
-  const sel=document.getElementById('rschHora'); sel.innerHTML='<option value="">Seleccionar</option>';
-  for(let h=7;h<19;h++){['00','30'].forEach(m=>{const o=document.createElement('option');o.value=String(h).padStart(2,'0')+':'+m;o.textContent=String(h).padStart(2,'0')+':'+m;sel.appendChild(o);});}
   const tom=new Date(); tom.setDate(tom.getDate()+1);
   document.getElementById('rschFecha').min=tom.toISOString().split('T')[0];
   document.getElementById('rschFecha').value='';
   document.getElementById('rschMotivo').value='';
+  fillRschedSlotsClient('', code);
+  document.getElementById('rschFecha').onchange = function(){ fillRschedSlotsClient(this.value, activeAptCode); };
   openClientModal('reschedModal');
+}
+
+function fillRschedSlotsClient(date, currentCode){
+  const sel = document.getElementById('rschHora');
+  const apts = getStoredApts();
+  const occupied = new Set(
+    apts.filter(x => x.date===date && x.code!==currentCode && x.status!=='cancelled')
+        .map(x => x.time)
+  );
+  const todayStr = new Date().toISOString().split('T')[0];
+  const nowMins  = date===todayStr ? new Date().getHours()*60+new Date().getMinutes()+30 : 0;
+
+  sel.innerHTML = '<option value="">Seleccionar hora</option>';
+  for(let h=7;h<19;h++){
+    ['00','30'].forEach(m=>{
+      const val  = `${String(h).padStart(2,'0')}:${m}`;
+      const mins = h*60+Number(m);
+      if(occupied.has(val) || mins < nowMins) return;
+      const o = document.createElement('option');
+      o.value = val; o.textContent = val;
+      sel.appendChild(o);
+    });
+  }
+  if(sel.options.length===1){
+    const o=document.createElement('option'); o.disabled=true;
+    o.textContent='Sin horarios disponibles'; sel.appendChild(o);
+  }
 }
 
 function confirmReschedClient(){
