@@ -212,7 +212,6 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--tan));border-radius:2px;transition:width 1.1s cubic-bezier(.16,1,.3,1)}
 .bar-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);min-width:82px;text-align:right;letter-spacing:.02em}
 .bar-pct{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);min-width:32px;text-align:right}
-.bar-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);width:80px;text-align:right}
 .svc-rank-list{padding:0 20px 16px}
 .svc-rank-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);transition:background .15s}
 .svc-rank-row:last-child{border-bottom:none}
@@ -860,6 +859,19 @@ body.locked{overflow:hidden}
     <div style="font-family:Georgia,serif;font-size:20px;color:#c9a96e;margin-bottom:12px;font-style:italic;">Contraseña actualizada</div>
     <p style="color:rgba(255,255,255,.6);font-size:13px;line-height:1.7;margin:0 0 24px;">Tu nueva contraseña ha sido guardada correctamente.<br>También recibirás un correo de confirmación.</p>
     <button onclick="document.getElementById('passSuccessModal').style.display='none'" style="padding:10px 32px;background:linear-gradient(135deg,#b8965a,#c9a96e);border:none;color:#1a1410;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:600;">Entendido</button>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMACIÓN BORRADO CITAS -->
+<div id="clearConfirmModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:#1a1410;border:1px solid rgba(158,74,74,.35);border-radius:8px;padding:36px;max-width:380px;width:90%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <div style="font-size:40px;margin-bottom:14px;">🗑️</div>
+    <div style="font-family:Georgia,serif;font-size:18px;color:#e07070;margin-bottom:10px;font-style:italic;">Borrar citas antiguas</div>
+    <p id="clearConfirmMsg" style="color:rgba(255,255,255,.6);font-size:13px;line-height:1.7;margin:0 0 24px;"></p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="document.getElementById('clearConfirmModal').style.display='none'" style="padding:10px 24px;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Cancelar</button>
+      <button id="clearConfirmBtn" style="padding:10px 24px;background:var(--rose,#9e4a4a);border:none;color:#fff;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:600;">Sí, borrar</button>
+    </div>
   </div>
 </div>
 
@@ -1786,13 +1798,16 @@ async function attemptLogin() {
     const r = await backendPost({ action: 'verifyLogin', pass });
     valid = r && r.data && r.data.valid === true;
   } catch(e) {
-    // Si el backend falla, caer al hardcoded como fallback
-    valid = (pass === AUTH.PASS);
+    // Si el backend falla, usar la última contraseña validada exitosamente (guardada en sessionStorage)
+    // o caer al hardcoded como último recurso
+    const lastKnown = sessionStorage.getItem(AUTH.SESSION_KEY + '_pass');
+    valid = lastKnown ? (pass === lastKnown) : (pass === AUTH.PASS);
   }
   btn.textContent = 'Ingresar al panel'; btn.disabled = false;
 
   if (valid) {
     sessionStorage.setItem(AUTH.SESSION_KEY, AUTH.USER);
+    sessionStorage.setItem(AUTH.SESSION_KEY + '_pass', pass); // guardar para fallback offline
     document.getElementById('loginScreen').style.display = 'none';
     document.body.style.overflow = '';
     loginAttempts = 0;
@@ -1955,21 +1970,32 @@ function cfgClearOld() {
   const dias = parseInt(document.getElementById('cfgDias').value);
   if (!dias || dias < 1) return cfgMsg('cfgClearMsg','Ingresa un número de días válido');
 
-  const confirmMsg = `¿Borrar todas las citas anteriores a los últimos ${dias} días?\n\nEsta acción es permanente y no se puede deshacer.`;
-  if (!confirm(confirmMsg)) return;
+  // Mostrar modal de confirmación propio (window.confirm() se bloquea en móvil/iframe)
+  document.getElementById('clearConfirmMsg').textContent =
+    `Se eliminarán permanentemente todas las citas anteriores a los últimos ${dias} días. Esta acción no se puede deshacer.`;
+  const modal = document.getElementById('clearConfirmModal');
+  modal.style.display = 'flex';
 
-  backendPost({ action: 'clearOld', days: dias })
-    .then(r => {
+  // Asignar acción al botón confirmar (re-bind cada vez para capturar el valor de 'dias')
+  const btn = document.getElementById('clearConfirmBtn');
+  btn.onclick = async () => {
+    modal.style.display = 'none';
+    btn.textContent = 'Borrando…'; btn.disabled = true;
+    try {
+      const r = await backendPost({ action: 'clearOld', days: dias });
       if (r && r.ok) {
         const n = r.data && r.data.deleted !== undefined ? r.data.deleted : '?';
         cfgMsg('cfgClearMsg', `✓ Se eliminaron ${n} citas anteriores al ${r.data && r.data.cutoff || ''}.`, true);
-        // Refrescar vista local
         syncFromBackend();
       } else {
         cfgMsg('cfgClearMsg', (r && r.error) || 'Error al borrar citas');
       }
-    })
-    .catch(() => cfgMsg('cfgClearMsg','Error de conexión con el servidor'));
+    } catch(e) {
+      cfgMsg('cfgClearMsg','Error de conexión con el servidor');
+    } finally {
+      btn.textContent = 'Sí, borrar'; btn.disabled = false;
+    }
+  };
 }
 </script>
 

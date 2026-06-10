@@ -1467,8 +1467,8 @@ function initFromConfig() {
       <div class="svc-price">$${s.price.toLocaleString('es-CO')}<small>COP</small></div>
     </div>`).join('');
 
-  // Observar las filas nuevas para el reveal (se crean después del observer inicial)
-  document.querySelectorAll('.svc-row.rv').forEach(el => obs.observe(el));
+  // Observar solo las filas nuevas que aún no son visibles (evita doble-observe)
+  document.querySelectorAll('.svc-row.rv:not(.in)').forEach(el => obs.observe(el));
 
   // Re-asignar listeners de servicios (se pierden al reemplazar innerHTML)
   document.querySelectorAll('.svc-row').forEach(row => {
