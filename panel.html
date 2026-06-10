@@ -530,11 +530,16 @@ body.locked{overflow:hidden}
     </div>
     <div class="login-field">
       <label class="login-label">Contraseña</label>
-      <input class="login-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter') attemptLogin()">
+      <div style="position:relative;">
+        <input class="login-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') attemptLogin()" style="padding-right:40px;">
+        <button type="button" onclick="toggleEye('loginPass','loginPassEye')" id="loginPassEye"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;opacity:.5;color:inherit;"
+          title="Mostrar/ocultar contraseña">👁</button>
+      </div>
     </div>
 
-    <button class="login-btn" onclick="attemptLogin()">Ingresar al panel</button>
+    <button class="login-btn" id="loginBtn" onclick="attemptLogin()">Ingresar al panel</button>
 
     <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
     <div class="login-attempts" id="loginAttempts"></div>
@@ -781,18 +786,27 @@ body.locked{overflow:hidden}
         <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
           <div class="nf-field">
             <label class="nf-label">Contraseña actual</label>
-            <input class="nf-input" type="password" id="cfgPassActual" placeholder="••••••••">
+            <div style="position:relative;">
+              <input class="nf-input" type="password" id="cfgPassActual" placeholder="••••••••" style="padding-right:38px;">
+              <button type="button" onclick="toggleEye('cfgPassActual','eyeActual')" id="eyeActual" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;opacity:.45;font-size:15px;" title="Ver">👁</button>
+            </div>
           </div>
           <div class="nf-field">
             <label class="nf-label">Nueva contraseña</label>
-            <input class="nf-input" type="password" id="cfgPassNueva" placeholder="Mín. 6 caracteres">
+            <div style="position:relative;">
+              <input class="nf-input" type="password" id="cfgPassNueva" placeholder="Mín. 6 caracteres" style="padding-right:38px;">
+              <button type="button" onclick="toggleEye('cfgPassNueva','eyeNueva')" id="eyeNueva" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;opacity:.45;font-size:15px;" title="Ver">👁</button>
+            </div>
           </div>
           <div class="nf-field">
             <label class="nf-label">Confirmar nueva contraseña</label>
-            <input class="nf-input" type="password" id="cfgPassConfirm" placeholder="Repite la nueva contraseña">
+            <div style="position:relative;">
+              <input class="nf-input" type="password" id="cfgPassConfirm" placeholder="Repite la nueva contraseña" style="padding-right:38px;">
+              <button type="button" onclick="toggleEye('cfgPassConfirm','eyeConfirm')" id="eyeConfirm" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;opacity:.45;font-size:15px;" title="Ver">👁</button>
+            </div>
           </div>
           <div id="cfgPassMsg" style="font-size:12px;min-height:18px;color:var(--rose);display:none;"></div>
-          <button class="topbar-btn" onclick="cfgChangePass()" style="align-self:flex-start;">Actualizar contraseña</button>
+          <button class="topbar-btn" id="cfgPassBtn" onclick="cfgChangePass()" style="align-self:flex-start;">Actualizar contraseña</button>
         </div>
       </div>
 
@@ -819,6 +833,16 @@ body.locked{overflow:hidden}
   </div>
 
 </main>
+
+<!-- MODAL CONFIRMACIÓN CONTRASEÑA -->
+<div id="passSuccessModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:#1a1410;border:1px solid rgba(201,169,110,.3);border-radius:8px;padding:40px 36px;max-width:380px;width:90%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <div style="font-size:44px;margin-bottom:16px;">🔐</div>
+    <div style="font-family:Georgia,serif;font-size:20px;color:#c9a96e;margin-bottom:12px;font-style:italic;">Contraseña actualizada</div>
+    <p style="color:rgba(255,255,255,.6);font-size:13px;line-height:1.7;margin:0 0 24px;">Tu nueva contraseña ha sido guardada correctamente.<br>También recibirás un correo de confirmación.</p>
+    <button onclick="document.getElementById('passSuccessModal').style.display='none'" style="padding:10px 32px;background:linear-gradient(135deg,#b8965a,#c9a96e);border:none;color:#1a1410;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:600;">Entendido</button>
+  </div>
+</div>
 
 <!-- MODAL DETALLE -->
 <div class="modal-overlay" id="aptModal">
@@ -1662,7 +1686,7 @@ function checkSession() {
   }
 }
 
-function attemptLogin() {
+async function attemptLogin() {
   // Check lockout
   if (lockedUntil && new Date() < lockedUntil) {
     const mins = Math.ceil((lockedUntil - new Date()) / 60000);
@@ -1672,41 +1696,58 @@ function attemptLogin() {
 
   const user = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
+  const btn  = document.getElementById('loginBtn');
 
-  if (user === AUTH.USER && pass === AUTH.PASS) {
-    // Success — guarda el usuario para validación futura
+  // Verificar usuario primero (local, rápido)
+  if (user !== AUTH.USER) {
+    loginFailed(); return;
+  }
+
+  // Verificar contraseña contra el backend (soporta cambios via PropertiesService)
+  btn.textContent = 'Verificando…'; btn.disabled = true;
+  let valid = false;
+  try {
+    const r = await backendPost({ action: 'verifyLogin', pass });
+    valid = r && r.data && r.data.valid === true;
+  } catch(e) {
+    // Si el backend falla, caer al hardcoded como fallback
+    valid = (pass === AUTH.PASS);
+  }
+  btn.textContent = 'Ingresar al panel'; btn.disabled = false;
+
+  if (valid) {
     sessionStorage.setItem(AUTH.SESSION_KEY, AUTH.USER);
     document.getElementById('loginScreen').style.display = 'none';
     document.body.style.overflow = '';
     loginAttempts = 0;
     document.getElementById('loginAttempts').textContent = '';
   } else {
-    loginAttempts++;
-    const remaining = AUTH.MAX_ATTEMPTS - loginAttempts;
-
-    if (loginAttempts >= AUTH.MAX_ATTEMPTS) {
-      lockedUntil = new Date(Date.now() + AUTH.LOCKOUT_MINUTES * 60000);
-      showLoginError(`Cuenta bloqueada por ${AUTH.LOCKOUT_MINUTES} minutos.`);
-      document.getElementById('loginAttempts').textContent = '';
-    } else {
-      showLoginError('Usuario o contraseña incorrectos');
-      document.getElementById('loginAttempts').textContent =
-        `${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''}`;
-    }
-
-    // Shake animation (transition set BEFORE transform)
-    const box = document.querySelector('.login-box');
-    box.style.transition = 'transform .08s ease-in-out';
-    setTimeout(() => { box.style.transform = 'translateX(-10px)'; }, 0);
-    setTimeout(() => { box.style.transform = 'translateX(10px)'; },  80);
-    setTimeout(() => { box.style.transform = 'translateX(-6px)'; },  160);
-    setTimeout(() => { box.style.transform = 'translateX(6px)'; },   240);
-    setTimeout(() => { box.style.transform = 'translateX(0)'; },     320);
-    setTimeout(() => { box.style.transition = ''; },                 400);
-
-    document.getElementById('loginPass').value = '';
-    document.getElementById('loginPass').focus();
+    loginFailed();
   }
+}
+
+function loginFailed() {
+  loginAttempts++;
+  const remaining = AUTH.MAX_ATTEMPTS - loginAttempts;
+  if (loginAttempts >= AUTH.MAX_ATTEMPTS) {
+    lockedUntil = new Date(Date.now() + AUTH.LOCKOUT_MINUTES * 60000);
+    showLoginError(`Cuenta bloqueada por ${AUTH.LOCKOUT_MINUTES} minutos.`);
+    document.getElementById('loginAttempts').textContent = '';
+  } else {
+    showLoginError('Usuario o contraseña incorrectos');
+    document.getElementById('loginAttempts').textContent =
+      `${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''}`;
+  }
+  const box = document.querySelector('.login-box');
+  box.style.transition = 'transform .08s ease-in-out';
+  setTimeout(() => { box.style.transform = 'translateX(-10px)'; }, 0);
+  setTimeout(() => { box.style.transform = 'translateX(10px)'; },  80);
+  setTimeout(() => { box.style.transform = 'translateX(-6px)'; },  160);
+  setTimeout(() => { box.style.transform = 'translateX(6px)'; },   240);
+  setTimeout(() => { box.style.transform = 'translateX(0)'; },     320);
+  setTimeout(() => { box.style.transition = ''; },                 400);
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginPass').focus();
 }
 
 function showLoginError(msg) {
@@ -1786,28 +1827,47 @@ function cfgMsg(id, msg, isOk) {
   if (isOk) setTimeout(() => el.style.display = 'none', 4000);
 }
 
-function cfgChangePass() {
-  const actual   = document.getElementById('cfgPassActual').value.trim();
-  const nueva    = document.getElementById('cfgPassNueva').value.trim();
-  const confirm  = document.getElementById('cfgPassConfirm').value.trim();
+function toggleEye(inputId, btnId) {
+  const inp = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.style.opacity = '1';
+  } else {
+    inp.type = 'password';
+    btn.style.opacity = '.45';
+  }
+}
+
+async function cfgChangePass() {
+  const actual   = document.getElementById('cfgPassActual').value;
+  const nueva    = document.getElementById('cfgPassNueva').value;
+  const confirm  = document.getElementById('cfgPassConfirm').value;
   if (!actual || !nueva || !confirm) return cfgMsg('cfgPassMsg','Completa todos los campos');
   if (nueva.length < 6)              return cfgMsg('cfgPassMsg','La contraseña debe tener al menos 6 caracteres');
   if (nueva !== confirm)             return cfgMsg('cfgPassMsg','Las contraseñas no coinciden');
 
-  backendPost({ action: 'changePassword', currentPass: actual, newPass: nueva })
-    .then(r => {
-      if (r && r.ok) {
-        cfgMsg('cfgPassMsg','✓ Contraseña actualizada. Recibirás un correo de confirmación.', true);
-        document.getElementById('cfgPassActual').value = '';
-        document.getElementById('cfgPassNueva').value  = '';
-        document.getElementById('cfgPassConfirm').value= '';
-        // Actualizar la sesión con la nueva contraseña en AUTH (para que logout/login funcione)
-        AUTH.pass = nueva;
-      } else {
-        cfgMsg('cfgPassMsg', (r && r.error) || 'Error al cambiar la contraseña');
-      }
-    })
-    .catch(() => cfgMsg('cfgPassMsg','Error de conexión con el servidor'));
+  const btn = document.getElementById('cfgPassBtn');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    const r = await backendPost({ action: 'changePassword', currentPass: actual, newPass: nueva });
+    if (r && r.ok) {
+      document.getElementById('cfgPassActual').value  = '';
+      document.getElementById('cfgPassNueva').value   = '';
+      document.getElementById('cfgPassConfirm').value = '';
+      document.getElementById('cfgPassMsg').style.display = 'none';
+      // Mostrar modal de éxito
+      document.getElementById('passSuccessModal').style.display = 'flex';
+    } else {
+      cfgMsg('cfgPassMsg', (r && r.error) || 'Error al cambiar la contraseña');
+    }
+  } catch(e) {
+    cfgMsg('cfgPassMsg','Error de conexión con el servidor');
+  } finally {
+    btn.textContent = 'Actualizar contraseña'; btn.disabled = false;
+  }
 }
 
 function cfgClearOld() {
