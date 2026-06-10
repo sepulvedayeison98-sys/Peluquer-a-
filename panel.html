@@ -1173,14 +1173,13 @@ function renderCitasTable(){
 /* ── STATUS ── */
 function changeStatus(id,newStatus){
   refreshApts();
-  const a=appointments.find(x=>x.id===id);
-  if(a){
-    a.status=newStatus;
-    persistApts();
-    backendPost({ action:'updateStatus', code:a.code, status:newStatus }); // sync backend
-    renderDashTable();
-    renderMiniCal();
-  }
+  const a=appointments.find(x=>x.id===id); if(!a) return;
+  a.status=newStatus;
+  persistApts();
+  backendPost({ action:'updateStatus', code:a.code, status:newStatus });
+  notifyN8N('updateStatus', a, { status: newStatus }); // notificar cliente
+  renderDashTable();
+  renderMiniCal();
 }
 
 /* ── MODAL ── */
