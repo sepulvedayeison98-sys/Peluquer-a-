@@ -296,17 +296,14 @@ function changePassword(currentPass, newPass) {
   // Guardar nueva contraseña en PropertiesService (servidor, no visible en código)
   PropertiesService.getScriptProperties().setProperty(PASS_KEY, newPass);
 
-  // Notificar al propietario por correo
-  const html = emailBase(
-    '<h2 style="margin:0 0 16px;font-size:18px;color:#c9a96e;font-weight:400;">🔐 Contraseña actualizada</h2>' +
-    '<p style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.7;margin:0 0 20px;">La contraseña de acceso al panel de <strong style="color:#fff;">' + BUSINESS_NAME + '</strong> fue cambiada exitosamente.</p>' +
-    '<p style="color:rgba(255,255,255,.5);font-size:12px;line-height:1.6;margin:0;">Si no realizaste este cambio, actualiza la contraseña de inmediato desde el panel en Configuración.</p>'
-  );
-  MailApp.sendEmail({
-    to: BARBERO_EMAIL,
-    subject: '🔐 Contraseña del panel actualizada — ' + BUSINESS_NAME,
-    htmlBody: html,
-    name: BUSINESS_NAME
+  // Notificar al propietario vía N8N (misma ruta que los demás correos)
+  notifyN8N({
+    action: 'password_changed',
+    apt: {
+      name:  'Propietario',
+      email: BARBERO_EMAIL
+    },
+    business: BUSINESS_NAME
   });
 
   return { changed: true };

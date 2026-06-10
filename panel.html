@@ -807,6 +807,10 @@ body.locked{overflow:hidden}
           </div>
           <div id="cfgPassMsg" style="font-size:12px;min-height:18px;color:var(--rose);display:none;"></div>
           <button class="topbar-btn" id="cfgPassBtn" onclick="cfgChangePass()" style="align-self:flex-start;">Actualizar contraseña</button>
+          <div id="cfgPassOk" style="display:none;background:rgba(76,175,129,.12);border:1px solid rgba(76,175,129,.35);border-radius:6px;padding:12px 16px;margin-top:4px;">
+            <div style="font-size:13px;color:#4caf81;font-weight:600;margin-bottom:4px;">✓ Contraseña actualizada</div>
+            <div style="font-size:11px;color:rgba(76,175,129,.8);line-height:1.5;">Tu nueva contraseña está activa. Recibirás un correo de confirmación en <strong id="cfgPassOkEmail"></strong></div>
+          </div>
         </div>
       </div>
 
@@ -1858,7 +1862,12 @@ async function cfgChangePass() {
       document.getElementById('cfgPassNueva').value   = '';
       document.getElementById('cfgPassConfirm').value = '';
       document.getElementById('cfgPassMsg').style.display = 'none';
-      // Mostrar modal de éxito
+      // Banner verde en el formulario
+      const okBanner = document.getElementById('cfgPassOk');
+      document.getElementById('cfgPassOkEmail').textContent = BUSINESS_CONFIG.barberoEmail;
+      okBanner.style.display = 'block';
+      setTimeout(() => okBanner.style.display = 'none', 8000);
+      // Modal de éxito
       document.getElementById('passSuccessModal').style.display = 'flex';
     } else {
       cfgMsg('cfgPassMsg', (r && r.error) || 'Error al cambiar la contraseña');
