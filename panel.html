@@ -184,19 +184,28 @@ body{background:var(--snow);color:var(--ink);font-family:'Jost',sans-serif;font-
 .h-slot.has-apt::after{content:attr(data-label);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--gold2);padding:2px;text-align:center;overflow:hidden}
 
 /* HORARIO CONFIG */
-.horario-config{padding:20px 24px}
-.dia-row{display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--border)}
+.horario-config{padding:16px 20px}
+.dia-row{padding:13px 0;border-bottom:1px solid var(--border)}
 .dia-row:last-child{border-bottom:none}
-.dia-name{font-size:13px;font-weight:400;color:var(--warm);width:80px}
+.dia-row-main{display:flex;align-items:center;gap:14px}
+.dia-name{font-size:13px;font-weight:500;color:var(--warm);width:82px;flex-shrink:0}
 .toggle{width:40px;height:22px;background:var(--beige2);border-radius:11px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
 .toggle.on{background:var(--gold)}
 .toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--white);transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .toggle.on::after{left:21px}
-.dia-hours{display:flex;gap:8px;align-items:center}
-.dia-input{border:1px solid var(--border);background:var(--snow);padding:6px 10px;font-family:'DM Mono',monospace;font-size:12px;color:var(--warm);width:70px;outline:none}
-.dia-input:focus{border-color:var(--gold)}
-.dia-sep{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.dia-hours{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dia-select{border:1px solid var(--border);background:var(--snow);padding:5px 8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--warm);outline:none;cursor:pointer;border-radius:3px;-webkit-appearance:none;appearance:none;text-align:center}
+.dia-select:focus{border-color:var(--gold)}
+.dia-sep{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);padding:0 2px}
 .dia-closed{font-family:'DM Mono',monospace;font-size:10px;color:var(--tan);letter-spacing:.2em;text-transform:uppercase}
+.dia-blocks{margin-top:10px;padding-left:96px;display:flex;flex-direction:column;gap:6px}
+.block-row{display:flex;align-items:center;gap:8px;background:var(--beige);border-radius:4px;padding:7px 10px;border:1px solid var(--border)}
+.block-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;flex:1}
+.block-del{background:none;border:none;color:var(--rose);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;opacity:.7}
+.block-del:hover{opacity:1}
+.add-block-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding-left:96px;background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:color .2s}
+.add-block-btn:hover{color:var(--gold)}
+.h-slot.lunch{background:repeating-linear-gradient(135deg,#f5f0e8,#f5f0e8 3px,#ede8df 3px,#ede8df 6px);cursor:not-allowed;border-color:var(--tan)}
 
 /* INGRESOS */
 .ing-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid var(--border)}
@@ -1396,53 +1405,102 @@ function saveNewApt(){
 /* ── HORARIO ── */
 const HORARIO_KEY = 'sbs_horario';
 const HORARIO_DEFAULT = [
-  {name:'Lunes',    open:true, start:'07:00',end:'19:00'},
-  {name:'Martes',   open:true, start:'07:00',end:'19:00'},
-  {name:'Miércoles',open:true, start:'07:00',end:'19:00'},
-  {name:'Jueves',   open:true, start:'07:00',end:'19:00'},
-  {name:'Viernes',  open:true, start:'07:00',end:'19:00'},
-  {name:'Sábado',   open:true, start:'07:00',end:'16:00'},
-  {name:'Domingo',  open:false,start:'',     end:''},
+  {name:'Lunes',    open:true, start:'07:00',end:'19:00', blocks:[]},
+  {name:'Martes',   open:true, start:'07:00',end:'19:00', blocks:[]},
+  {name:'Miércoles',open:true, start:'07:00',end:'19:00', blocks:[]},
+  {name:'Jueves',   open:true, start:'07:00',end:'19:00', blocks:[]},
+  {name:'Viernes',  open:true, start:'07:00',end:'19:00', blocks:[]},
+  {name:'Sábado',   open:true, start:'07:00',end:'16:00', blocks:[]},
+  {name:'Domingo',  open:false,start:'10:00',end:'14:00', blocks:[]},
 ];
 function loadHorario(){
-  try{const s=localStorage.getItem(HORARIO_KEY);return s?JSON.parse(s):null;}catch(e){return null;}
+  try{
+    const s=localStorage.getItem(HORARIO_KEY);
+    if(!s) return null;
+    const parsed=JSON.parse(s);
+    // Migrar datos antiguos que no tengan blocks
+    return parsed.map(d=>({blocks:[],...d}));
+  }catch(e){return null;}
 }
 function persistHorario(){localStorage.setItem(HORARIO_KEY,JSON.stringify(horarioDias));}
-const horarioDias = loadHorario() || HORARIO_DEFAULT.map(d=>({...d}));
+const horarioDias = loadHorario() || HORARIO_DEFAULT.map(d=>({...d,blocks:[]}));
 
 /* Convierte "HH:MM" a minutos desde medianoche */
 function toMin(t){if(!t)return 0;const[h,m]=t.split(':');return parseInt(h)*60+parseInt(m||0);}
 
+/* Formatea "HH:MM" a "7:00 AM" legible */
+function fmtHora(t){
+  if(!t) return '—';
+  const[h,m]=t.split(':');
+  const hr=parseInt(h); const ampm=hr<12?'AM':'PM';
+  const h12=hr===0?12:hr>12?hr-12:hr;
+  return `${h12}:${m} ${ampm}`;
+}
+
+/* Genera opciones de horas cada 30 min de 06:00 a 22:00 */
+function horaOptions(selected){
+  let opts='';
+  for(let h=6;h<=22;h++){
+    for(const m of ['00','30']){
+      const val=`${String(h).padStart(2,'0')}:${m}`;
+      const label=fmtHora(val);
+      opts+=`<option value="${val}"${val===selected?' selected':''}>${label}</option>`;
+    }
+  }
+  return opts;
+}
+
 function slotBlocked(dayIdx, slotH){
   const d = horarioDias[dayIdx];
-  if(!d || !d.open) return true;
+  if(!d || !d.open) return 'closed';
   const slotMin = toMin(slotH);
   const startMin = toMin(d.start);
   const endMin   = toMin(d.end);
-  return slotMin < startMin || slotMin >= endMin;
+  if(slotMin < startMin || slotMin >= endMin) return 'closed';
+  // Verificar bloques de cierre parcial
+  for(const b of (d.blocks||[])){
+    if(slotMin >= toMin(b.start) && slotMin < toMin(b.end)) return 'lunch';
+  }
+  return false;
 }
 
 function renderHorario(){
   const cfg=document.getElementById('horarioConfig'); cfg.innerHTML='';
   horarioDias.forEach((d,i)=>{
-    cfg.innerHTML+=`<div class="dia-row">
-      <div class="dia-name">${d.name}</div>
-      <div class="toggle ${d.open?'on':''}" id="toggle-${i}" onclick="toggleDia(${i})"></div>
-      <div class="dia-hours" id="hours-${i}" style="display:${d.open?'flex':'none'}">
-        <input class="dia-input" type="time" value="${d.start}" id="start-${i}">
+    const blocksHtml=(d.blocks||[]).map((b,bi)=>`
+      <div class="block-row" id="block-${i}-${bi}">
+        <span class="block-label">🚫 Bloque ${bi+1}</span>
+        <select class="dia-select" id="bstart-${i}-${bi}">${horaOptions(b.start)}</select>
         <span class="dia-sep">—</span>
-        <input class="dia-input" type="time" value="${d.end}" id="end-${i}">
+        <select class="dia-select" id="bend-${i}-${bi}">${horaOptions(b.end)}</select>
+        <button class="block-del" onclick="delBlock(${i},${bi})" title="Eliminar bloque">×</button>
+      </div>`).join('');
+
+    cfg.innerHTML+=`<div class="dia-row" id="dia-row-${i}">
+      <div class="dia-row-main">
+        <span class="dia-name">${d.name}</span>
+        <div class="toggle ${d.open?'on':''}" id="toggle-${i}" onclick="toggleDia(${i})"></div>
+        ${d.open ? `
+        <div class="dia-hours">
+          <select class="dia-select" id="start-${i}">${horaOptions(d.start)}</select>
+          <span class="dia-sep">—</span>
+          <select class="dia-select" id="end-${i}">${horaOptions(d.end)}</select>
+        </div>` : `<span class="dia-closed">Cerrado</span>`}
       </div>
-      ${!d.open?'<span class="dia-closed">Cerrado</span>':''}
+      ${d.open && blocksHtml ? `<div class="dia-blocks">${blocksHtml}</div>` : ''}
+      ${d.open ? `<button class="add-block-btn" onclick="addBlock(${i})">＋ Agregar bloque de cierre</button>` : ''}
     </div>`;
   });
 
+  renderHorarioGrid();
+}
+
+function renderHorarioGrid(){
   const grid=document.getElementById('horarioGrid'); grid.innerHTML='';
   const hours=[];
-  for(let h=7;h<19;h++) hours.push(`${String(h).padStart(2,'0')}:00`);
+  for(let h=6;h<22;h++) hours.push(`${String(h).padStart(2,'0')}:00`);
   const cols=['','Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const weekStart=new Date(TODAY); weekStart.setDate(TODAY.getDate()-TODAY.getDay()+1);
-  /* Actualizar etiqueta de semana */
   const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
   const wLabel=document.getElementById('horarioWeekLabel');
   if(wLabel) wLabel.textContent=`${weekStart.getDate()} – ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()].slice(0,3)}`;
@@ -1452,14 +1510,18 @@ function renderHorario(){
     grid.appendChild(el);
   });
   hours.forEach(h=>{
-    const lbl=document.createElement('div');lbl.className='h-time-label';lbl.textContent=h;grid.appendChild(lbl);
+    const lbl=document.createElement('div');lbl.className='h-time-label';lbl.textContent=fmtHora(h);grid.appendChild(lbl);
     for(let col=1;col<=7;col++){
       const dd=new Date(weekStart);dd.setDate(weekStart.getDate()+col-1);
       const ds=fmtDate(dd);
       const apt=appointments.find(a=>a.date===ds&&a.time===h&&a.status!=='cancelled');
       const el=document.createElement('div');el.className='h-slot';
-      if(slotBlocked(col-1, h)){
+      const blocked=slotBlocked(col-1, h);
+      if(blocked==='closed'){
         el.classList.add('blocked');
+      } else if(blocked==='lunch'){
+        el.classList.add('lunch');
+        el.title='Bloque de cierre';
       } else if(apt){
         el.classList.add('has-apt');
         el.setAttribute('data-label',apt.name.split(' ')[0]);
@@ -1471,25 +1533,46 @@ function renderHorario(){
 }
 
 function toggleDia(i){
-  /* Leer horas actuales del DOM antes de re-renderizar */
-  if(horarioDias[i].open){
-    horarioDias[i].start=document.getElementById(`start-${i}`)?.value||horarioDias[i].start;
-    horarioDias[i].end  =document.getElementById(`end-${i}`)?.value  ||horarioDias[i].end;
-  }
+  readHorarioFromDOM(i);
   horarioDias[i].open=!horarioDias[i].open;
   renderHorario();
+}
+
+function addBlock(i){
+  readHorarioFromDOM(i);
+  const d=horarioDias[i];
+  // Sugerir almuerzo 12:00–13:00 o siguiente bloque disponible
+  const suggested = d.blocks.length===0 ? {start:'12:00',end:'13:00'} : {start:'14:00',end:'15:00'};
+  d.blocks.push(suggested);
+  renderHorario();
+}
+
+function delBlock(i,bi){
+  readHorarioFromDOM(i);
+  horarioDias[i].blocks.splice(bi,1);
+  renderHorario();
+}
+
+function readHorarioFromDOM(i){
+  const d=horarioDias[i];
+  if(!d.open) return;
+  const s=document.getElementById(`start-${i}`)?.value;
+  const e=document.getElementById(`end-${i}`)?.value;
+  if(s) d.start=s;
+  if(e) d.end=e;
+  (d.blocks||[]).forEach((b,bi)=>{
+    const bs=document.getElementById(`bstart-${i}-${bi}`)?.value;
+    const be=document.getElementById(`bend-${i}-${bi}`)?.value;
+    if(bs) b.start=bs;
+    if(be) b.end=be;
+  });
 }
 
 function saveHorario(){
   horarioDias.forEach((d,i)=>{
     const toggleEl=document.getElementById(`toggle-${i}`);
     d.open = toggleEl ? toggleEl.classList.contains('on') : d.open;
-    if(d.open){
-      const s=document.getElementById(`start-${i}`)?.value;
-      const e=document.getElementById(`end-${i}`)?.value;
-      if(s) d.start=s;
-      if(e) d.end=e;
-    }
+    readHorarioFromDOM(i);
   });
   persistHorario();
   renderHorario();
